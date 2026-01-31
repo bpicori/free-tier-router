@@ -25,10 +25,10 @@ export {
 // Provider types
 export {
   type ProviderType,
-  type Provider,
+  type ProviderDefinition,
   type ProviderModelCandidate,
-  type CompletionResult,
-  type StreamingCompletionResult,
+  providerSupportsModel,
+  getProviderModelId,
 } from "./provider.js";
 
 // Configuration types

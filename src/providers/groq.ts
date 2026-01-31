@@ -1,11 +1,6 @@
-import type { Provider } from "../types/provider.js";
+import type { ProviderDefinition } from "../types/provider.js";
 import type { ModelConfig } from "../types/models.js";
 import { ModelQualityTier } from "../types/models.js";
-import {
-  createProvider,
-  type BaseProviderConfig,
-  type ProviderDefinition,
-} from "./base.js";
 
 /**
  * Groq provider configuration
@@ -186,9 +181,19 @@ const GROQ_MODEL_MAPPING: Record<string, string> = {
 
 /**
  * Groq provider definition
+ *
+ * Use with the OpenAI SDK:
+ * ```typescript
+ * import OpenAI from "openai";
+ *
+ * const client = new OpenAI({
+ *   apiKey: process.env.GROQ_API_KEY,
+ *   baseURL: GROQ_PROVIDER.baseUrl,
+ * });
+ * ```
  */
-export const GROQ_DEFINITION: ProviderDefinition = {
-  type: "groq",
+export const GROQ_PROVIDER: ProviderDefinition = {
+  name: "groq",
   displayName: "Groq",
   baseUrl: "https://api.groq.com/openai/v1",
   models: GROQ_MODELS,
@@ -196,43 +201,6 @@ export const GROQ_DEFINITION: ProviderDefinition = {
 };
 
 /**
- * Create a Groq provider instance
- *
- * @param config - Provider configuration with API key
- * @returns Configured Groq provider
- *
- * @example
- * ```typescript
- * const groq = createGroqProvider({
- *   apiKey: process.env.GROQ_API_KEY!,
- * });
- *
- * const response = await groq.createCompletion({
- *   model: "llama-3.3-70b",
- *   messages: [{ role: "user", content: "Hello!" }],
- * });
- * ```
- */
-export const createGroqProvider = (config: BaseProviderConfig): Provider => {
-  return createProvider(GROQ_DEFINITION, config);
-};
-
-/**
  * Get all Groq model configurations
  */
 export const getGroqModels = (): readonly ModelConfig[] => GROQ_MODELS;
-
-/**
- * Check if Groq supports a specific model
- */
-export const groqSupportsModel = (modelId: string): boolean => {
-  const normalizedId = modelId.toLowerCase();
-  return (
-    normalizedId in GROQ_MODEL_MAPPING ||
-    GROQ_MODELS.some(
-      (m) =>
-        m.id.toLowerCase() === normalizedId ||
-        m.aliases?.some((a) => a.toLowerCase() === normalizedId)
-    )
-  );
-};

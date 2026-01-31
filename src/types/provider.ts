@@ -1,9 +1,4 @@
 import type { ModelConfig, QuotaStatus } from "./models.js";
-import type {
-  ChatCompletionRequest,
-  ChatCompletionResponse,
-  ChatCompletionChunk,
-} from "./openai.js";
 
 /**
  * Supported provider types
@@ -11,48 +6,82 @@ import type {
 export type ProviderType = "groq" | "cerebras";
 
 /**
- * Provider interface - all providers must implement this
+ * Provider configuration - defines how to connect to a provider
+ * This is a pure data structure, no methods or API calls
  */
-export interface Provider {
-  /** Provider identifier */
+export interface ProviderDefinition {
+  /** Provider type identifier */
   readonly name: ProviderType;
   /** Display name for logging/debugging */
   readonly displayName: string;
+  /** Base URL for OpenAI-compatible API */
+  readonly baseUrl: string;
   /** Models available from this provider */
   readonly models: ModelConfig[];
-
-  /**
-   * Create a chat completion (non-streaming)
-   */
-  createCompletion(
-    request: ChatCompletionRequest
-  ): Promise<ChatCompletionResponse>;
-
-  /**
-   * Create a streaming chat completion
-   */
-  createCompletionStream(
-    request: ChatCompletionRequest
-  ): AsyncIterable<ChatCompletionChunk>;
-
-  /**
-   * Check if this provider supports a specific model
-   */
-  supportsModel(modelId: string): boolean;
-
-  /**
-   * Get the provider-specific model ID for a canonical model name
-   */
-  getModelId(canonicalModelId: string): string | null;
+  /** Map canonical model IDs to provider-specific IDs */
+  readonly modelMapping: Record<string, string>;
 }
+
+/**
+ * Check if a provider supports a specific model
+ */
+export const providerSupportsModel = (
+  provider: ProviderDefinition,
+  modelId: string
+): boolean => {
+  const normalizedId = modelId.toLowerCase();
+
+  // Check model mapping
+  if (normalizedId in provider.modelMapping) {
+    return true;
+  }
+
+  // Check models list
+  return provider.models.some(
+    (m) =>
+      m.id.toLowerCase() === normalizedId ||
+      m.aliases?.some((a) => a.toLowerCase() === normalizedId)
+  );
+};
+
+/**
+ * Get the provider-specific model ID for a canonical model name
+ */
+export const getProviderModelId = (
+  provider: ProviderDefinition,
+  canonicalModelId: string
+): string | null => {
+  // Direct mapping exists
+  if (provider.modelMapping[canonicalModelId]) {
+    return provider.modelMapping[canonicalModelId];
+  }
+
+  // Check if it's already a provider-specific ID
+  const providerIds = Object.values(provider.modelMapping);
+  if (providerIds.includes(canonicalModelId)) {
+    return canonicalModelId;
+  }
+
+  // Check model configs for ID or alias match
+  for (const model of provider.models) {
+    if (model.id === canonicalModelId) {
+      return model.id;
+    }
+    if (model.aliases?.includes(canonicalModelId)) {
+      return model.id;
+    }
+  }
+
+  return null;
+};
 
 /**
  * Provider with runtime quota information
  * Used by routing strategies to make decisions
  */
 export interface ProviderModelCandidate {
-  /** The provider instance */
-  provider: Provider;
+  /** The provider definition */
+  provider: ProviderDefinition;
   /** The specific model configuration */
   model: ModelConfig;
   /** Current quota status */
@@ -63,32 +92,4 @@ export interface ProviderModelCandidate {
   latencyMs?: number;
   /** Whether this provider uses trial credits vs truly free */
   isFreeCredits: boolean;
-}
-
-/**
- * Result of a completion request with metadata
- */
-export interface CompletionResult {
-  /** The completion response */
-  response: ChatCompletionResponse;
-  /** Which provider handled the request */
-  provider: ProviderType;
-  /** Which model was used */
-  model: string;
-  /** Request latency in milliseconds */
-  latencyMs: number;
-  /** Tokens used (from response or estimated) */
-  tokensUsed: number;
-}
-
-/**
- * Result of a streaming completion with metadata
- */
-export interface StreamingCompletionResult {
-  /** Async iterable of chunks */
-  stream: AsyncIterable<ChatCompletionChunk>;
-  /** Which provider handled the request */
-  provider: ProviderType;
-  /** Which model was used */
-  model: string;
 }

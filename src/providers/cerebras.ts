@@ -1,11 +1,6 @@
-import type { Provider } from "../types/provider.js";
+import type { ProviderDefinition } from "../types/provider.js";
 import type { ModelConfig } from "../types/models.js";
 import { ModelQualityTier } from "../types/models.js";
-import {
-  createProvider,
-  type BaseProviderConfig,
-  type ProviderDefinition,
-} from "./base.js";
 
 /**
  * Cerebras provider configuration
@@ -155,9 +150,19 @@ const CEREBRAS_MODEL_MAPPING: Record<string, string> = {
 
 /**
  * Cerebras provider definition
+ *
+ * Use with the OpenAI SDK:
+ * ```typescript
+ * import OpenAI from "openai";
+ *
+ * const client = new OpenAI({
+ *   apiKey: process.env.CEREBRAS_API_KEY,
+ *   baseURL: CEREBRAS_PROVIDER.baseUrl,
+ * });
+ * ```
  */
-export const CEREBRAS_DEFINITION: ProviderDefinition = {
-  type: "cerebras",
+export const CEREBRAS_PROVIDER: ProviderDefinition = {
+  name: "cerebras",
   displayName: "Cerebras",
   baseUrl: "https://api.cerebras.ai/v1",
   models: CEREBRAS_MODELS,
@@ -165,45 +170,6 @@ export const CEREBRAS_DEFINITION: ProviderDefinition = {
 };
 
 /**
- * Create a Cerebras provider instance
- *
- * @param config - Provider configuration with API key
- * @returns Configured Cerebras provider
- *
- * @example
- * ```typescript
- * const cerebras = createCerebrasProvider({
- *   apiKey: process.env.CEREBRAS_API_KEY!,
- * });
- *
- * const response = await cerebras.createCompletion({
- *   model: "llama-3.3-70b",
- *   messages: [{ role: "user", content: "Hello!" }],
- * });
- * ```
- */
-export const createCerebrasProvider = (
-  config: BaseProviderConfig
-): Provider => {
-  return createProvider(CEREBRAS_DEFINITION, config);
-};
-
-/**
  * Get all Cerebras model configurations
  */
 export const getCerebrasModels = (): readonly ModelConfig[] => CEREBRAS_MODELS;
-
-/**
- * Check if Cerebras supports a specific model
- */
-export const cerebrasSupportsModel = (modelId: string): boolean => {
-  const normalizedId = modelId.toLowerCase();
-  return (
-    normalizedId in CEREBRAS_MODEL_MAPPING ||
-    CEREBRAS_MODELS.some(
-      (m) =>
-        m.id.toLowerCase() === normalizedId ||
-        m.aliases?.some((a) => a.toLowerCase() === normalizedId)
-    )
-  );
-};

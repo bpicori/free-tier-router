@@ -1,43 +1,43 @@
 /**
  * Providers Module
  *
- * Factory functions and utilities for creating LLM provider instances.
+ * Provider definitions for OpenAI-compatible LLM APIs.
+ * Each provider is a pure configuration object that can be used
+ * with the OpenAI SDK by setting the baseURL.
  */
 
-// Re-export base provider factory
-export {
-  createProvider,
-  type BaseProviderConfig,
-  type ProviderDefinition,
-} from "./base.js";
+import type { ProviderDefinition, ProviderType } from "../types/provider.js";
 
-// Re-export HTTP utilities
-export {
-  postCompletion,
-  postCompletionStream,
-  type HttpClientConfig,
-  type RateLimitInfo,
-} from "./http.js";
+// Re-export provider definitions
+export { GROQ_PROVIDER, getGroqModels } from "./groq.js";
+export { CEREBRAS_PROVIDER, getCerebrasModels } from "./cerebras.js";
 
-// Re-export streaming utilities
-export {
-  parseSSEStream,
-  collectStreamContent,
-  getStreamTokenUsage,
-  wrapStreamWithCallback,
-} from "./stream.js";
+// Import for registry
+import { GROQ_PROVIDER } from "./groq.js";
+import { CEREBRAS_PROVIDER } from "./cerebras.js";
 
-// Re-export concrete providers
-export {
-  createGroqProvider,
-  getGroqModels,
-  groqSupportsModel,
-  GROQ_DEFINITION,
-} from "./groq.js";
+/**
+ * Registry of all available providers
+ */
+export const PROVIDER_REGISTRY: Record<ProviderType, ProviderDefinition> = {
+  groq: GROQ_PROVIDER,
+  cerebras: CEREBRAS_PROVIDER,
+};
 
-export {
-  createCerebrasProvider,
-  getCerebrasModels,
-  cerebrasSupportsModel,
-  CEREBRAS_DEFINITION,
-} from "./cerebras.js";
+/**
+ * Get a provider definition by type
+ */
+export const getProvider = (type: ProviderType): ProviderDefinition => {
+  const provider = PROVIDER_REGISTRY[type];
+  if (!provider) {
+    throw new Error(`Unknown provider type: ${type}`);
+  }
+  return provider;
+};
+
+/**
+ * Get all available provider types
+ */
+export const getAvailableProviders = (): ProviderType[] => {
+  return Object.keys(PROVIDER_REGISTRY) as ProviderType[];
+};

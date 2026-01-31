@@ -28,10 +28,10 @@ todos:
     status: completed
   - id: router
     content: Implement main Router class with model-first selection, retry logic, and provider failover
-    status: pending
+    status: completed
   - id: tests
     content: Add unit tests for strategies, rate limiting, and integration tests for providers
-    status: pending
+    status: completed
 isProject: false
 ---
 

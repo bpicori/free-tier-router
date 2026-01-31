@@ -9,10 +9,9 @@
  *   GROQ_API_KEY=xxx CEREBRAS_API_KEY=xxx npx tsx playground/test-providers.ts
  */
 
-import {
-  createGroqProvider,
-  createCerebrasProvider,
-} from "../src/providers/index.js";
+import OpenAI from "openai";
+import { GROQ_PROVIDER, CEREBRAS_PROVIDER } from "../src/providers/index.js";
+import type { ProviderDefinition } from "../src/types/provider.js";
 
 // ─────────────────────────────────────────────────────────────────
 // Configuration
@@ -30,23 +29,32 @@ const TEST_MESSAGE = "What is 2 + 2? Answer in one word.";
 const log = (message: string) => console.log(`\n${message}`);
 const divider = () => console.log("─".repeat(60));
 
+/**
+ * Create an OpenAI client configured for a provider
+ */
+const createClient = (provider: ProviderDefinition, apiKey: string): OpenAI => {
+  return new OpenAI({
+    apiKey,
+    baseURL: provider.baseUrl,
+  });
+};
+
 // ─────────────────────────────────────────────────────────────────
 // Test Non-Streaming Completion
 // ─────────────────────────────────────────────────────────────────
 
 const testCompletion = async (
   providerName: string,
-  createFn: () => ReturnType<typeof createGroqProvider>,
+  client: OpenAI,
   model: string
 ) => {
   log(`Testing ${providerName} (${model}) - Non-Streaming`);
   divider();
 
-  const provider = createFn();
   const start = Date.now();
 
   try {
-    const response = await provider.createCompletion({
+    const response = await client.chat.completions.create({
       model,
       messages: [{ role: "user", content: TEST_MESSAGE }],
       max_tokens: 50,
@@ -69,35 +77,35 @@ const testCompletion = async (
 
 const testStreamingCompletion = async (
   providerName: string,
-  createFn: () => ReturnType<typeof createGroqProvider>,
+  client: OpenAI,
   model: string
 ) => {
   log(`Testing ${providerName} (${model}) - Streaming`);
   divider();
 
-  const provider = createFn();
   const start = Date.now();
 
   try {
-    const stream = provider.createCompletionStream({
+    const stream = await client.chat.completions.create({
       model,
       messages: [{ role: "user", content: TEST_MESSAGE }],
       max_tokens: 50,
+      stream: true,
     });
 
     process.stdout.write("Response: ");
 
-    let tokenCount = 0;
+    let chunkCount = 0;
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta?.content;
       if (delta) {
         process.stdout.write(delta);
-        tokenCount++;
+        chunkCount++;
       }
     }
 
     const elapsed = Date.now() - start;
-    console.log(`\nChunks: ${tokenCount}`);
+    console.log(`\nChunks: ${chunkCount}`);
     console.log(`Latency: ${elapsed}ms`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : error}`);
@@ -113,21 +121,23 @@ const main = async () => {
 
   // Test Groq
   if (GROQ_API_KEY) {
-    const createGroq = () => createGroqProvider({ apiKey: GROQ_API_KEY });
+    const groqClient = createClient(GROQ_PROVIDER, GROQ_API_KEY);
+    const groqModel = GROQ_PROVIDER.models[0]?.id ?? "llama-3.1-8b-instant";
 
-    await testCompletion("Groq", createGroq, "llama-3.1-8b");
-    await testStreamingCompletion("Groq", createGroq, "llama-3.1-8b");
+    await testCompletion("Groq", groqClient, groqModel);
+    await testStreamingCompletion("Groq", groqClient, groqModel);
   } else {
     log("⚠️  GROQ_API_KEY not set - skipping Groq tests");
   }
 
   // Test Cerebras
   if (CEREBRAS_API_KEY) {
-    const createCerebras = () =>
-      createCerebrasProvider({ apiKey: CEREBRAS_API_KEY });
+    const cerebrasClient = createClient(CEREBRAS_PROVIDER, CEREBRAS_API_KEY);
+    const cerebrasModel =
+      CEREBRAS_PROVIDER.models[0]?.id ?? "llama-3.1-8b";
 
-    await testCompletion("Cerebras", createCerebras, "llama-3.1-8b");
-    await testStreamingCompletion("Cerebras", createCerebras, "llama-3.1-8b");
+    await testCompletion("Cerebras", cerebrasClient, cerebrasModel);
+    await testStreamingCompletion("Cerebras", cerebrasClient, cerebrasModel);
   } else {
     log("⚠️  CEREBRAS_API_KEY not set - skipping Cerebras tests");
   }

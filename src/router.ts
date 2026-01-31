@@ -127,34 +127,8 @@ export interface Router {
 }
 
 /**
- * Create a router instance
- *
- * The router provides an OpenAI-compatible interface that routes requests
- * to the best available provider based on:
- * 1. Model availability (which providers support the requested model)
- * 2. Model quality tier (prefer higher quality when multiple options exist)
- * 3. Routing strategy (priority, least-used, etc.)
- * 4. Rate limit status (skip rate-limited providers)
- *
- * @param config - Router configuration
- * @returns Router instance
- *
- * @example
- * ```typescript
- * const router = createRouter({
- *   providers: [
- *     { type: "groq", apiKey: process.env.GROQ_API_KEY! },
- *     { type: "cerebras", apiKey: process.env.CEREBRAS_API_KEY! },
- *   ],
- *   strategy: "least-used",
- * });
- *
- * // OpenAI-compatible usage
- * const response = await router.chat.completions.create({
- *   model: "llama-3.3-70b",
- *   messages: [{ role: "user", content: "Hello!" }],
- * });
- * ```
+ * Create a router instance with OpenAI-compatible interface.
+ * See knowledge/router.md for detailed documentation.
  */
 export const createRouter = (config: FreeTierRouterConfig): Router => {
   const resolved = resolveConfig(config);

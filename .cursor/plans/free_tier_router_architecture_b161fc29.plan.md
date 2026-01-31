@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: model-registry
     content: Create model registry with quality tiers, aliases, and generic model mappings
-    status: pending
+    status: completed
   - id: state-store
     content: Implement StateStore interface with MemoryStore, FileStore, and RedisStore
     status: pending

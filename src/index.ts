@@ -9,3 +9,6 @@ export const VERSION = "0.1.0";
 
 // Export all types
 export * from "./types/index.js";
+
+// Export model registry
+export * from "./models/index.js";

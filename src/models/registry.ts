@@ -137,7 +137,10 @@ export class ModelRegistry {
    * Get default rate limits for a provider/model combination
    * These are based on typical free tier limits
    */
-  private getDefaultLimits(provider: ProviderType, _modelId: string): RateLimits {
+  private getDefaultLimits(
+    provider: ProviderType,
+    _modelId: string
+  ): RateLimits {
     // Default limits by provider (based on free-llm-api-resources)
     const providerLimits: Record<ProviderType, RateLimits> = {
       groq: {
@@ -170,7 +173,11 @@ export class ModelRegistry {
         if (aliasConfig.tier) {
           query = { ...query, tier: aliasConfig.tier, modelName: undefined };
         } else if (aliasConfig.minTier) {
-          query = { ...query, minTier: aliasConfig.minTier, modelName: undefined };
+          query = {
+            ...query,
+            minTier: aliasConfig.minTier,
+            modelName: undefined,
+          };
         } else if (aliasConfig.tag) {
           query = { ...query, tag: aliasConfig.tag, modelName: undefined };
         }

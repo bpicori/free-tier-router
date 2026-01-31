@@ -12,7 +12,11 @@ import { calculateUpdatedUsage, calculateUpdatedLatency } from "./utils.js";
  */
 export interface RedisClient {
   get(key: string): Promise<string | null>;
-  set(key: string, value: string, ...args: (string | number)[]): Promise<unknown>;
+  set(
+    key: string,
+    value: string,
+    ...args: (string | number)[]
+  ): Promise<unknown>;
   del(...keys: string[]): Promise<number>;
   keys(pattern: string): Promise<string[]>;
   quit(): Promise<string>;
@@ -107,7 +111,12 @@ export const createRedisStore = (config: RedisStoreConfig): StateStore => {
     ttlMs: number
   ): Promise<UsageRecord> => {
     const existing = await getUsage(key);
-    const updated = calculateUpdatedUsage(existing, requests, tokens, windowStart);
+    const updated = calculateUpdatedUsage(
+      existing,
+      requests,
+      tokens,
+      windowStart
+    );
     await setUsage(key, updated, ttlMs);
     return updated;
   };
@@ -162,7 +171,12 @@ export const createRedisStore = (config: RedisStoreConfig): StateStore => {
   ): Promise<void> => {
     const redisKey = keys.latency(provider, model);
     const existing = await getLatency(provider, model);
-    const updated = calculateUpdatedLatency(existing, provider, model, latencyMs);
+    const updated = calculateUpdatedLatency(
+      existing,
+      provider,
+      model,
+      latencyMs
+    );
     await client.set(redisKey, JSON.stringify(updated));
   };
 

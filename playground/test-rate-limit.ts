@@ -18,7 +18,11 @@ import type { RateLimits } from "../src/types/models.js";
 const log = (message: string) => console.log(`\n${message}`);
 const divider = () => console.log("─".repeat(60));
 
-const formatQuota = (quota: Awaited<ReturnType<ReturnType<typeof createRateLimitTracker>["getQuotaStatus"]>>) => {
+const formatQuota = (
+  quota: Awaited<
+    ReturnType<ReturnType<typeof createRateLimitTracker>["getQuotaStatus"]>
+  >
+) => {
   console.log("  Requests remaining:");
   console.log(`    Minute: ${quota.requestsRemaining.minute ?? "unlimited"}`);
   console.log(`    Hour:   ${quota.requestsRemaining.hour ?? "unlimited"}`);
@@ -27,7 +31,9 @@ const formatQuota = (quota: Awaited<ReturnType<ReturnType<typeof createRateLimit
   console.log(`    Minute: ${quota.tokensRemaining.minute ?? "unlimited"}`);
   console.log(`    Day:    ${quota.tokensRemaining.day ?? "unlimited"}`);
   if (quota.cooldownUntil) {
-    console.log(`  ⚠️  In cooldown until: ${quota.cooldownUntil.toISOString()}`);
+    console.log(
+      `  ⚠️  In cooldown until: ${quota.cooldownUntil.toISOString()}`
+    );
   }
 };
 
@@ -83,11 +89,23 @@ const main = async () => {
   log("🔍 Checking availability...");
   divider();
 
-  const canMakeSmallRequest = await tracker.canMakeRequest(provider, model, limits, 100);
-  const canMakeLargeRequest = await tracker.canMakeRequest(provider, model, limits, 10000);
+  const canMakeSmallRequest = await tracker.canMakeRequest(
+    provider,
+    model,
+    limits,
+    100
+  );
+  const canMakeLargeRequest = await tracker.canMakeRequest(
+    provider,
+    model,
+    limits,
+    10000
+  );
 
   console.log(`  Can make small request (100 tokens): ${canMakeSmallRequest}`);
-  console.log(`  Can make large request (10000 tokens): ${canMakeLargeRequest}`);
+  console.log(
+    `  Can make large request (10000 tokens): ${canMakeLargeRequest}`
+  );
 
   // ─────────────────────────────────────────────────────────────────
   // Simulate Rate Limit Hit

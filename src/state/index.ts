@@ -12,4 +12,8 @@
 // Re-export store factories
 export { createMemoryStore } from "./memory.js";
 export { createFileStore, type FileStoreConfig } from "./file.js";
-export { createRedisStore, type RedisStoreConfig, type RedisClient } from "./redis.js";
+export {
+  createRedisStore,
+  type RedisStoreConfig,
+  type RedisClient,
+} from "./redis.js";

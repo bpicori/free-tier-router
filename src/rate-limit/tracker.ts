@@ -84,7 +84,8 @@ const getLimitForWindow = (
   window: TimeWindow,
   metric: "requests" | "tokens"
 ): number | null => {
-  const key = `${metric}Per${window.charAt(0).toUpperCase()}${window.slice(1)}` as keyof RateLimits;
+  const key =
+    `${metric}Per${window.charAt(0).toUpperCase()}${window.slice(1)}` as keyof RateLimits;
   const value = limits[key];
   return value ?? null;
 };

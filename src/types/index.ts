@@ -56,10 +56,7 @@ export {
 } from "./errors.js";
 
 // Strategy types
-export {
-  type RoutingContext,
-  type RoutingStrategy,
-} from "./strategy.js";
+export { type RoutingContext, type RoutingStrategy } from "./strategy.js";
 
 // State store types
 export {

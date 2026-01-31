@@ -1,7 +1,11 @@
 import type { Provider } from "../types/provider.js";
 import type { ModelConfig } from "../types/models.js";
 import { ModelQualityTier } from "../types/models.js";
-import { createProvider, type BaseProviderConfig, type ProviderDefinition } from "./base.js";
+import {
+  createProvider,
+  type BaseProviderConfig,
+  type ProviderDefinition,
+} from "./base.js";
 
 /**
  * Groq provider configuration

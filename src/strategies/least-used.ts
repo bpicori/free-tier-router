@@ -58,10 +58,7 @@ const calculateAvailabilityScore = (
   ) {
     percentages.push(quota.tokensRemaining.hour / limits.tokensPerHour);
   }
-  if (
-    limits.tokensPerDay !== undefined &&
-    quota.tokensRemaining.day !== null
-  ) {
+  if (limits.tokensPerDay !== undefined && quota.tokensRemaining.day !== null) {
     percentages.push(quota.tokensRemaining.day / limits.tokensPerDay);
   }
 
@@ -124,7 +121,10 @@ export const createLeastUsedStrategy = (): RoutingStrategy => {
       // Calculate availability scores and sort by highest
       const withScores = sameTierCandidates.map((candidate) => ({
         candidate,
-        score: calculateAvailabilityScore(candidate.quota, candidate.model.limits),
+        score: calculateAvailabilityScore(
+          candidate.quota,
+          candidate.model.limits
+        ),
       }));
 
       // Sort by score descending (highest availability first)

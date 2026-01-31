@@ -23,7 +23,7 @@ export interface RoutingStrategy {
 
   /**
    * Select the best provider/model candidate for a request
-   * 
+   *
    * @param candidates - Available provider/model combinations, already sorted by quality tier
    * @param context - Routing context with request info and exclusions
    * @returns The selected candidate, or null if no suitable candidate

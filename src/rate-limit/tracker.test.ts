@@ -28,7 +28,11 @@ describe("RateLimitTracker", () => {
       // Make a request that used 500 tokens
       await tracker.recordUsage("groq", "llama-3.3-70b", 500);
 
-      const quota = await tracker.getQuotaStatus("groq", "llama-3.3-70b", limits);
+      const quota = await tracker.getQuotaStatus(
+        "groq",
+        "llama-3.3-70b",
+        limits
+      );
 
       // Should have used 1 request and 500 tokens
       expect(quota.requestsRemaining.minute).toBe(99);
@@ -43,7 +47,11 @@ describe("RateLimitTracker", () => {
       await tracker.recordUsage("groq", "llama-3.3-70b", 200);
       await tracker.recordUsage("groq", "llama-3.3-70b", 300);
 
-      const quota = await tracker.getQuotaStatus("groq", "llama-3.3-70b", limits);
+      const quota = await tracker.getQuotaStatus(
+        "groq",
+        "llama-3.3-70b",
+        limits
+      );
 
       // 3 requests used
       expect(quota.requestsRemaining.minute).toBe(7);
@@ -59,7 +67,11 @@ describe("RateLimitTracker", () => {
       // Only minute limit defined
       const limits: RateLimits = { requestsPerMinute: 100 };
 
-      const quota = await tracker.getQuotaStatus("groq", "llama-3.3-70b", limits);
+      const quota = await tracker.getQuotaStatus(
+        "groq",
+        "llama-3.3-70b",
+        limits
+      );
 
       expect(quota.requestsRemaining.minute).toBe(100);
       expect(quota.requestsRemaining.hour).toBeNull(); // No hourly limit
@@ -72,7 +84,11 @@ describe("RateLimitTracker", () => {
         requestsPerHour: 1000,
       };
 
-      const quota = await tracker.getQuotaStatus("groq", "llama-3.3-70b", limits);
+      const quota = await tracker.getQuotaStatus(
+        "groq",
+        "llama-3.3-70b",
+        limits
+      );
 
       // Reset times should be in the future
       expect(quota.resetTimes.minute).toBeInstanceOf(Date);
@@ -87,8 +103,16 @@ describe("RateLimitTracker", () => {
       await tracker.recordUsage("groq", "llama-3.3-70b", 100);
       await tracker.recordUsage("cerebras", "llama-3.3-70b", 100);
 
-      const groqQuota = await tracker.getQuotaStatus("groq", "llama-3.3-70b", limits);
-      const cerebrasQuota = await tracker.getQuotaStatus("cerebras", "llama-3.3-70b", limits);
+      const groqQuota = await tracker.getQuotaStatus(
+        "groq",
+        "llama-3.3-70b",
+        limits
+      );
+      const cerebrasQuota = await tracker.getQuotaStatus(
+        "cerebras",
+        "llama-3.3-70b",
+        limits
+      );
 
       expect(groqQuota.requestsRemaining.minute).toBe(8); // 2 requests
       expect(cerebrasQuota.requestsRemaining.minute).toBe(9); // 1 request
@@ -122,7 +146,11 @@ describe("RateLimitTracker", () => {
       await tracker.recordUsage("groq", "llama-3.3-70b", 100);
       await tracker.recordUsage("groq", "llama-3.3-70b", 100);
 
-      const canMake = await tracker.canMakeRequest("groq", "llama-3.3-70b", limits);
+      const canMake = await tracker.canMakeRequest(
+        "groq",
+        "llama-3.3-70b",
+        limits
+      );
 
       expect(canMake).toBe(false);
     });
@@ -148,7 +176,11 @@ describe("RateLimitTracker", () => {
 
       await tracker.markRateLimited("groq", "llama-3.3-70b");
 
-      const canMake = await tracker.canMakeRequest("groq", "llama-3.3-70b", limits);
+      const canMake = await tracker.canMakeRequest(
+        "groq",
+        "llama-3.3-70b",
+        limits
+      );
 
       expect(canMake).toBe(false);
     });
@@ -172,7 +204,10 @@ describe("RateLimitTracker", () => {
 
       await tracker.markRateLimited("groq", "llama-3.3-70b", resetAt);
 
-      const cooldownUntil = await tracker.getCooldownUntil("groq", "llama-3.3-70b");
+      const cooldownUntil = await tracker.getCooldownUntil(
+        "groq",
+        "llama-3.3-70b"
+      );
 
       expect(cooldownUntil?.getTime()).toBe(resetAt.getTime());
     });
@@ -213,7 +248,9 @@ describe("RateLimitTracker", () => {
       expect(await tracker.isInCooldown("groq", "llama-3.1-8b")).toBe(false);
 
       // Different provider, same model
-      expect(await tracker.isInCooldown("cerebras", "llama-3.3-70b")).toBe(false);
+      expect(await tracker.isInCooldown("cerebras", "llama-3.3-70b")).toBe(
+        false
+      );
     });
   });
 
@@ -228,7 +265,11 @@ describe("RateLimitTracker", () => {
 
       await tracker.markRateLimited("groq", "llama-3.3-70b", resetAt);
 
-      const quota = await tracker.getQuotaStatus("groq", "llama-3.3-70b", limits);
+      const quota = await tracker.getQuotaStatus(
+        "groq",
+        "llama-3.3-70b",
+        limits
+      );
 
       expect(quota.cooldownUntil?.getTime()).toBe(resetAt.getTime());
     });
@@ -236,7 +277,11 @@ describe("RateLimitTracker", () => {
     it("cooldownUntil is undefined when not rate limited", async () => {
       const limits: RateLimits = { requestsPerMinute: 100 };
 
-      const quota = await tracker.getQuotaStatus("groq", "llama-3.3-70b", limits);
+      const quota = await tracker.getQuotaStatus(
+        "groq",
+        "llama-3.3-70b",
+        limits
+      );
 
       expect(quota.cooldownUntil).toBeUndefined();
     });

@@ -1,7 +1,11 @@
 import type { Provider } from "../types/provider.js";
 import type { ModelConfig } from "../types/models.js";
 import { ModelQualityTier } from "../types/models.js";
-import { createProvider, type BaseProviderConfig, type ProviderDefinition } from "./base.js";
+import {
+  createProvider,
+  type BaseProviderConfig,
+  type ProviderDefinition,
+} from "./base.js";
 
 /**
  * Cerebras provider configuration
@@ -178,7 +182,9 @@ export const CEREBRAS_DEFINITION: ProviderDefinition = {
  * });
  * ```
  */
-export const createCerebrasProvider = (config: BaseProviderConfig): Provider => {
+export const createCerebrasProvider = (
+  config: BaseProviderConfig
+): Provider => {
   return createProvider(CEREBRAS_DEFINITION, config);
 };
 

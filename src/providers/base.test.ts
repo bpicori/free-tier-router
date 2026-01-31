@@ -58,7 +58,9 @@ describe("createProvider", () => {
       const provider = createProvider(testDefinition, { apiKey: "test-key" });
 
       // Canonical → Provider-specific
-      expect(provider.getModelId("llama-3.3-70b")).toBe("llama-3.3-70b-versatile");
+      expect(provider.getModelId("llama-3.3-70b")).toBe(
+        "llama-3.3-70b-versatile"
+      );
       expect(provider.getModelId("llama-3.1-8b")).toBe("llama-3.1-8b-instant");
     });
 
@@ -66,7 +68,9 @@ describe("createProvider", () => {
       const provider = createProvider(testDefinition, { apiKey: "test-key" });
 
       // Already provider-specific
-      expect(provider.getModelId("llama-3.3-70b-versatile")).toBe("llama-3.3-70b-versatile");
+      expect(provider.getModelId("llama-3.3-70b-versatile")).toBe(
+        "llama-3.3-70b-versatile"
+      );
     });
 
     it("resolves aliases to provider ID", () => {

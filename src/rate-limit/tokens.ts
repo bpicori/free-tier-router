@@ -50,7 +50,9 @@ export const estimateMessageTokens = (content: string): number => {
  * @param messages - Array of message contents
  * @returns Total estimated tokens
  */
-export const estimateChatTokens = (messages: Array<{ content: string }>): number => {
+export const estimateChatTokens = (
+  messages: Array<{ content: string }>
+): number => {
   const messageTokens = messages.reduce(
     (sum, msg) => sum + estimateMessageTokens(msg.content),
     0

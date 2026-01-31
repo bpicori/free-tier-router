@@ -23,9 +23,15 @@ describe("Cerebras Provider", () => {
       const models = CEREBRAS_DEFINITION.models;
 
       // Check we have models across tiers
-      const tier3 = models.filter((m) => m.qualityTier === ModelQualityTier.TIER_3);
-      const tier2 = models.filter((m) => m.qualityTier === ModelQualityTier.TIER_2);
-      const tier1 = models.filter((m) => m.qualityTier === ModelQualityTier.TIER_1);
+      const tier3 = models.filter(
+        (m) => m.qualityTier === ModelQualityTier.TIER_3
+      );
+      const tier2 = models.filter(
+        (m) => m.qualityTier === ModelQualityTier.TIER_2
+      );
+      const tier1 = models.filter(
+        (m) => m.qualityTier === ModelQualityTier.TIER_1
+      );
 
       expect(tier3.length).toBeGreaterThan(0); // 70B, 72B models
       expect(tier2.length).toBeGreaterThan(0); // 32B models
@@ -33,7 +39,9 @@ describe("Cerebras Provider", () => {
     });
 
     it("includes unique Qwen 72B model", () => {
-      const qwen72b = CEREBRAS_DEFINITION.models.find((m) => m.id === "qwen-2.5-72b");
+      const qwen72b = CEREBRAS_DEFINITION.models.find(
+        (m) => m.id === "qwen-2.5-72b"
+      );
 
       expect(qwen72b).toBeDefined();
       expect(qwen72b?.qualityTier).toBe(ModelQualityTier.TIER_3);
@@ -94,7 +102,9 @@ describe("Cerebras Provider", () => {
       const provider = createCerebrasProvider({ apiKey: "test-key" });
 
       // Groq-style suffixes should map to clean Cerebras IDs
-      expect(provider.getModelId("llama-3.3-70b-versatile")).toBe("llama-3.3-70b");
+      expect(provider.getModelId("llama-3.3-70b-versatile")).toBe(
+        "llama-3.3-70b"
+      );
       expect(provider.getModelId("llama-3.1-8b-instant")).toBe("llama-3.1-8b");
     });
 

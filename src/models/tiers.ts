@@ -56,10 +56,7 @@ export function getTierInfo(tier: ModelQualityTier): TierInfo {
 /**
  * Compare two tiers, returns positive if a > b, negative if a < b, 0 if equal
  */
-export function compareTiers(
-  a: ModelQualityTier,
-  b: ModelQualityTier
-): number {
+export function compareTiers(a: ModelQualityTier, b: ModelQualityTier): number {
   return a - b;
 }
 

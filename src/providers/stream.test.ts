@@ -157,7 +157,10 @@ describe("stream", () => {
     it("handles chunks with no content", async () => {
       const chunks: ChatCompletionChunk[] = [
         createChunk("Hi"),
-        { ...createChunk(""), choices: [{ index: 0, delta: {}, finish_reason: "stop" }] },
+        {
+          ...createChunk(""),
+          choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
+        },
       ];
 
       async function* mockStream() {
@@ -192,10 +195,13 @@ describe("stream", () => {
       let capturedContent = "";
       let capturedLastChunk: ChatCompletionChunk | null = null;
 
-      const wrapped = wrapStreamWithCallback(mockStream(), (content, lastChunk) => {
-        capturedContent = content;
-        capturedLastChunk = lastChunk;
-      });
+      const wrapped = wrapStreamWithCallback(
+        mockStream(),
+        (content, lastChunk) => {
+          capturedContent = content;
+          capturedLastChunk = lastChunk;
+        }
+      );
 
       // Consume the stream
       const yielded: ChatCompletionChunk[] = [];

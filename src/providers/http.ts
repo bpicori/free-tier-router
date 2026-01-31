@@ -1,4 +1,7 @@
-import type { ChatCompletionRequest, ChatCompletionResponse } from "../types/openai.js";
+import type {
+  ChatCompletionRequest,
+  ChatCompletionResponse,
+} from "../types/openai.js";
 import { RateLimitError, ProviderError } from "../types/errors.js";
 
 /**
@@ -50,7 +53,9 @@ const parseRetryAfter = (value: string | null): number | undefined => {
  */
 const extractRateLimitInfo = (headers: Headers): RateLimitInfo => {
   const retryAfter = parseRetryAfter(headers.get("Retry-After"));
-  const resetAt = retryAfter ? new Date(Date.now() + retryAfter * 1000) : undefined;
+  const resetAt = retryAfter
+    ? new Date(Date.now() + retryAfter * 1000)
+    : undefined;
 
   return { resetAt, retryAfterSeconds: retryAfter };
 };
@@ -134,7 +139,12 @@ export const postCompletionStream = async (
   config: HttpClientConfig,
   request: ChatCompletionRequest
 ): Promise<Response> => {
-  const { baseUrl, apiKey, timeoutMs = 120_000, headers: extraHeaders } = config;
+  const {
+    baseUrl,
+    apiKey,
+    timeoutMs = 120_000,
+    headers: extraHeaders,
+  } = config;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);

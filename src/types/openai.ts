@@ -66,7 +66,10 @@ export interface ChatCompletionRequest {
   /** Tools available for the model */
   tools?: Tool[];
   /** How to handle tool calls */
-  tool_choice?: "none" | "auto" | { type: "function"; function: { name: string } };
+  tool_choice?:
+    | "none"
+    | "auto"
+    | { type: "function"; function: { name: string } };
   /** Response format */
   response_format?: ResponseFormat;
   /** Random seed for deterministic outputs */

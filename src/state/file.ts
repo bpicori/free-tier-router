@@ -192,7 +192,12 @@ export const createFileStore = (config: FileStoreConfig): StateStore => {
   ): Promise<UsageRecord> => {
     await loadState();
     const existing = await getUsage(key);
-    const updated = calculateUpdatedUsage(existing, requests, tokens, windowStart);
+    const updated = calculateUpdatedUsage(
+      existing,
+      requests,
+      tokens,
+      windowStart
+    );
     await setUsage(key, updated, ttlMs);
     return updated;
   };
@@ -249,7 +254,12 @@ export const createFileStore = (config: FileStoreConfig): StateStore => {
     await loadState();
     const key = makeKey(provider, model);
     const existing = state.latency[key] ?? null;
-    const updated = calculateUpdatedLatency(existing, provider, model, latencyMs);
+    const updated = calculateUpdatedLatency(
+      existing,
+      provider,
+      model,
+      latencyMs
+    );
     state.latency[key] = updated;
     markDirty();
   };

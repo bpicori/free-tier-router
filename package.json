@@ -21,6 +21,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "prepublishOnly": "npm run build",
     "playground": "tsx --env-file=playground/.env playground/test-providers.ts",
     "playground:rate-limit": "tsx playground/test-rate-limit.ts"
@@ -43,6 +45,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.1.0",
+    "prettier": "^3.8.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"

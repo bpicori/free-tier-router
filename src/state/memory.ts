@@ -68,7 +68,12 @@ export const createMemoryStore = (): StateStore => {
     ttlMs: number
   ): Promise<UsageRecord> => {
     const existing = await getUsage(key);
-    const updated = calculateUpdatedUsage(existing, requests, tokens, windowStart);
+    const updated = calculateUpdatedUsage(
+      existing,
+      requests,
+      tokens,
+      windowStart
+    );
     await setUsage(key, updated, ttlMs);
     return updated;
   };
@@ -117,7 +122,12 @@ export const createMemoryStore = (): StateStore => {
   ): Promise<void> => {
     const key = makeKey(provider, model);
     const existing = state.latency.get(key) ?? null;
-    const updated = calculateUpdatedLatency(existing, provider, model, latencyMs);
+    const updated = calculateUpdatedLatency(
+      existing,
+      provider,
+      model,
+      latencyMs
+    );
     state.latency.set(key, updated);
   };
 

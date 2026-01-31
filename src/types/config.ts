@@ -49,7 +49,7 @@ export interface FreeTierRouterConfig {
   stateStore?: StateStoreConfig;
   /** Retry configuration */
   retry?: Partial<RetryConfig>;
-  /** 
+  /**
    * Model aliases for convenience
    * Maps user-friendly names to specific model IDs
    * e.g., { "fast": "llama-3.1-8b", "smart": "llama-3.3-70b" }
@@ -135,6 +135,7 @@ export function resolveConfig(config: FreeTierRouterConfig): ResolvedConfig {
     },
     modelAliases: config.modelAliases ?? {},
     timeoutMs: config.timeoutMs ?? DEFAULT_CONFIG.timeoutMs,
-    throwOnExhausted: config.throwOnExhausted ?? DEFAULT_CONFIG.throwOnExhausted,
+    throwOnExhausted:
+      config.throwOnExhausted ?? DEFAULT_CONFIG.throwOnExhausted,
   };
 }

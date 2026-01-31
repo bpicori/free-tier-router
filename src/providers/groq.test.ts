@@ -23,10 +23,18 @@ describe("Groq Provider", () => {
       const models = GROQ_DEFINITION.models;
 
       // Check we have models across tiers
-      const tier5 = models.filter((m) => m.qualityTier === ModelQualityTier.TIER_5);
-      const tier3 = models.filter((m) => m.qualityTier === ModelQualityTier.TIER_3);
-      const tier2 = models.filter((m) => m.qualityTier === ModelQualityTier.TIER_2);
-      const tier1 = models.filter((m) => m.qualityTier === ModelQualityTier.TIER_1);
+      const tier5 = models.filter(
+        (m) => m.qualityTier === ModelQualityTier.TIER_5
+      );
+      const tier3 = models.filter(
+        (m) => m.qualityTier === ModelQualityTier.TIER_3
+      );
+      const tier2 = models.filter(
+        (m) => m.qualityTier === ModelQualityTier.TIER_2
+      );
+      const tier1 = models.filter(
+        (m) => m.qualityTier === ModelQualityTier.TIER_1
+      );
 
       expect(tier5.length).toBeGreaterThan(0); // DeepSeek R1
       expect(tier3.length).toBeGreaterThan(0); // 70B models
@@ -72,14 +80,18 @@ describe("Groq Provider", () => {
       const provider = createGroqProvider({ apiKey: "test-key" });
 
       // llama-3.3-70b → llama-3.3-70b-versatile
-      expect(provider.getModelId("llama-3.3-70b")).toBe("llama-3.3-70b-versatile");
+      expect(provider.getModelId("llama-3.3-70b")).toBe(
+        "llama-3.3-70b-versatile"
+      );
     });
 
     it("maps deepseek-r1 to Groq distill variant", () => {
       const provider = createGroqProvider({ apiKey: "test-key" });
 
       // Groq uses distill variant
-      expect(provider.getModelId("deepseek-r1")).toBe("deepseek-r1-distill-llama-70b");
+      expect(provider.getModelId("deepseek-r1")).toBe(
+        "deepseek-r1-distill-llama-70b"
+      );
     });
 
     it("maps small models to Groq instant/preview variants", () => {
@@ -92,8 +104,12 @@ describe("Groq Provider", () => {
     it("accepts Groq-specific IDs directly", () => {
       const provider = createGroqProvider({ apiKey: "test-key" });
 
-      expect(provider.getModelId("llama-3.3-70b-versatile")).toBe("llama-3.3-70b-versatile");
-      expect(provider.getModelId("llama-3.1-8b-instant")).toBe("llama-3.1-8b-instant");
+      expect(provider.getModelId("llama-3.3-70b-versatile")).toBe(
+        "llama-3.3-70b-versatile"
+      );
+      expect(provider.getModelId("llama-3.1-8b-instant")).toBe(
+        "llama-3.1-8b-instant"
+      );
     });
 
     it("returns null for unsupported models", () => {

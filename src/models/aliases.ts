@@ -110,11 +110,7 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
   {
     id: "gemma-2-27b",
     qualityTier: ModelQualityTier.TIER_2,
-    aliases: [
-      "gemma-2-27b-it",
-      "google/gemma-2-27b",
-      "google/gemma-2-27b-it",
-    ],
+    aliases: ["gemma-2-27b-it", "google/gemma-2-27b", "google/gemma-2-27b-it"],
     providers: ["groq"],
     family: "gemma",
     tags: ["instruct"],
@@ -175,11 +171,7 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
   {
     id: "gemma-2-9b",
     qualityTier: ModelQualityTier.TIER_1,
-    aliases: [
-      "gemma-2-9b-it",
-      "google/gemma-2-9b",
-      "google/gemma-2-9b-it",
-    ],
+    aliases: ["gemma-2-9b-it", "google/gemma-2-9b", "google/gemma-2-9b-it"],
     providers: ["groq"],
     family: "gemma",
     tags: ["instruct"],
@@ -189,21 +181,24 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
 /**
  * Generic model aliases that map to quality tiers or tags
  */
-export const GENERIC_MODEL_ALIASES: Record<string, { tier?: ModelQualityTier; tag?: string; minTier?: ModelQualityTier }> = {
+export const GENERIC_MODEL_ALIASES: Record<
+  string,
+  { tier?: ModelQualityTier; tag?: string; minTier?: ModelQualityTier }
+> = {
   // Best available
-  "best": { minTier: ModelQualityTier.TIER_1 },
-  
+  best: { minTier: ModelQualityTier.TIER_1 },
+
   // Size-based aliases
   "best-xl": { tier: ModelQualityTier.TIER_4 },
   "best-large": { tier: ModelQualityTier.TIER_3 },
   "best-medium": { tier: ModelQualityTier.TIER_2 },
   "best-small": { tier: ModelQualityTier.TIER_1 },
-  
+
   // Capability-based aliases
   "best-reasoning": { tag: "reasoning" },
   "best-fast": { tag: "fast" },
   "best-code": { tag: "code" },
-  
+
   // Size shortcuts
   "70b": { tier: ModelQualityTier.TIER_3 },
   "32b": { tier: ModelQualityTier.TIER_2 },
@@ -215,17 +210,17 @@ export const GENERIC_MODEL_ALIASES: Record<string, { tier?: ModelQualityTier; ta
  */
 export function buildAliasMap(): Map<string, string> {
   const aliasMap = new Map<string, string>();
-  
+
   for (const model of MODEL_DEFINITIONS) {
     // Add canonical ID
     aliasMap.set(model.id.toLowerCase(), model.id);
-    
+
     // Add all aliases
     for (const alias of model.aliases) {
       aliasMap.set(alias.toLowerCase(), model.id);
     }
   }
-  
+
   return aliasMap;
 }
 
@@ -248,7 +243,13 @@ export function isGenericAlias(modelName: string): boolean {
 /**
  * Get generic alias configuration
  */
-export function getGenericAliasConfig(modelName: string): { tier?: ModelQualityTier; tag?: string; minTier?: ModelQualityTier } | null {
+export function getGenericAliasConfig(
+  modelName: string
+): {
+  tier?: ModelQualityTier;
+  tag?: string;
+  minTier?: ModelQualityTier;
+} | null {
   return GENERIC_MODEL_ALIASES[modelName.toLowerCase()] ?? null;
 }
 

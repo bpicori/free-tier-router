@@ -9,7 +9,10 @@
  *   GROQ_API_KEY=xxx CEREBRAS_API_KEY=xxx npx tsx playground/test-providers.ts
  */
 
-import { createGroqProvider, createCerebrasProvider } from "../src/providers/index.js";
+import {
+  createGroqProvider,
+  createCerebrasProvider,
+} from "../src/providers/index.js";
 
 // ─────────────────────────────────────────────────────────────────
 // Configuration
@@ -120,7 +123,8 @@ const main = async () => {
 
   // Test Cerebras
   if (CEREBRAS_API_KEY) {
-    const createCerebras = () => createCerebrasProvider({ apiKey: CEREBRAS_API_KEY });
+    const createCerebras = () =>
+      createCerebrasProvider({ apiKey: CEREBRAS_API_KEY });
 
     await testCompletion("Cerebras", createCerebras, "llama-3.1-8b");
     await testStreamingCompletion("Cerebras", createCerebras, "llama-3.1-8b");

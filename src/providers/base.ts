@@ -5,7 +5,11 @@ import type {
   ChatCompletionResponse,
   ChatCompletionChunk,
 } from "../types/openai.js";
-import { postCompletion, postCompletionStream, type HttpClientConfig } from "./http.js";
+import {
+  postCompletion,
+  postCompletionStream,
+  type HttpClientConfig,
+} from "./http.js";
 import { parseSSEStream } from "./stream.js";
 
 /**
@@ -105,7 +109,9 @@ export const createProvider = (
   ): Promise<ChatCompletionResponse> => {
     const providerModelId = getModelId(request.model);
     if (!providerModelId) {
-      throw new Error(`Model ${request.model} is not supported by ${displayName}`);
+      throw new Error(
+        `Model ${request.model} is not supported by ${displayName}`
+      );
     }
 
     const providerRequest = {
@@ -125,7 +131,9 @@ export const createProvider = (
   ): AsyncIterable<ChatCompletionChunk> {
     const providerModelId = getModelId(request.model);
     if (!providerModelId) {
-      throw new Error(`Model ${request.model} is not supported by ${displayName}`);
+      throw new Error(
+        `Model ${request.model} is not supported by ${displayName}`
+      );
     }
 
     const providerRequest = {

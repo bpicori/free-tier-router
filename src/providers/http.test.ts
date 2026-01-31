@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { postCompletion, postCompletionStream } from "./http.js";
 import { RateLimitError, ProviderError } from "../types/errors.js";
-import type { ChatCompletionRequest, ChatCompletionResponse } from "../types/openai.js";
+import type {
+  ChatCompletionRequest,
+  ChatCompletionResponse,
+} from "../types/openai.js";
 
 const testConfig = {
   baseUrl: "https://api.test.com/v1",
@@ -147,9 +150,7 @@ describe("http", () => {
     });
 
     it("sets stream: true in request body", async () => {
-      vi.mocked(fetch).mockResolvedValueOnce(
-        new Response("", { status: 200 })
-      );
+      vi.mocked(fetch).mockResolvedValueOnce(new Response("", { status: 200 }));
 
       await postCompletionStream(testConfig, testRequest);
 
@@ -163,9 +164,9 @@ describe("http", () => {
         new Response("Rate limited", { status: 429 })
       );
 
-      await expect(postCompletionStream(testConfig, testRequest)).rejects.toThrow(
-        RateLimitError
-      );
+      await expect(
+        postCompletionStream(testConfig, testRequest)
+      ).rejects.toThrow(RateLimitError);
     });
   });
 

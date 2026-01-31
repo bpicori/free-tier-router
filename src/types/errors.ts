@@ -20,10 +20,7 @@ export class AllProvidersExhaustedError extends FreeTierRouterError {
   /** Earliest time when a provider might become available */
   readonly earliestResetTime?: Date;
 
-  constructor(
-    attemptedProviders: ProviderType[],
-    earliestResetTime?: Date
-  ) {
+  constructor(attemptedProviders: ProviderType[], earliestResetTime?: Date) {
     const resetMsg = earliestResetTime
       ? ` Earliest reset: ${earliestResetTime.toISOString()}`
       : "";

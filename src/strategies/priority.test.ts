@@ -29,7 +29,7 @@ const createMockCandidate = (
       name: providerName as "groq",
       displayName: providerName,
       models: [],
-      createCompletion: async () => ({} as never),
+      createCompletion: async () => ({}) as never,
       createCompletionStream: async function* () {},
       supportsModel: () => true,
       getModelId: () => modelId,
@@ -64,9 +64,7 @@ const createMockCandidate = (
   };
 };
 
-const createContext = (
-  excludedProviders: string[] = []
-): RoutingContext => ({
+const createContext = (excludedProviders: string[] = []): RoutingContext => ({
   request: {
     model: "test-model",
     messages: [{ role: "user", content: "Hello" }],
@@ -110,10 +108,7 @@ describe("PriorityStrategy", () => {
       createMockCandidate({ providerName: "cerebras", priority: 2 }),
     ];
 
-    const result = strategy.selectProvider(
-      candidates,
-      createContext(["groq"])
-    );
+    const result = strategy.selectProvider(candidates, createContext(["groq"]));
     expect(result?.provider.name).toBe("cerebras");
   });
 

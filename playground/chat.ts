@@ -49,6 +49,8 @@ type CommandResult =
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
 
 const DEFAULT_MODEL = "best";
 const SYSTEM_PROMPT =
@@ -442,6 +444,20 @@ const buildProviders = (): ProviderConfig[] => {
     printColored("green", "  CEREBRAS_API_KEY found\n");
   } else {
     printColored("dim", "  CEREBRAS_API_KEY not set\n");
+  }
+
+  if (OPENROUTER_API_KEY) {
+    providers.push({ type: "openrouter", apiKey: OPENROUTER_API_KEY });
+    printColored("green", "  OPENROUTER_API_KEY found\n");
+  } else {
+    printColored("dim", "  OPENROUTER_API_KEY not set\n");
+  }
+
+  if (NVIDIA_NIM_API_KEY) {
+    providers.push({ type: "nvidia-nim", apiKey: NVIDIA_NIM_API_KEY });
+    printColored("green", "  NVIDIA_NIM_API_KEY found\n");
+  } else {
+    printColored("dim", "  NVIDIA_NIM_API_KEY not set\n");
   }
 
   return providers;

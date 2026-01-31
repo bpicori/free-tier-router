@@ -14,6 +14,13 @@ defaults:
     requests_per_day: 50
 
 models:
+  # Tier 4 - XL Models
+  - canonical: gpt-oss-120b
+    id: openai/gpt-oss-120b:free
+    limits:
+      requests_per_minute: 20
+      requests_per_day: 50
+
   # Tier 3 - Large Models
   - canonical: llama-3.3-70b
     id: meta-llama/llama-3.3-70b-instruct:free

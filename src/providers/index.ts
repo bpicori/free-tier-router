@@ -16,11 +16,17 @@ export {
   getOpenRouterModels,
   resetOpenRouterProvider,
 } from "./openrouter.js";
+export {
+  NVIDIA_NIM_PROVIDER,
+  getNvidiaNimModels,
+  resetNvidiaNimProvider,
+} from "./nvidia-nim.js";
 
 // Import for registry
 import { GROQ_PROVIDER } from "./groq.js";
 import { CEREBRAS_PROVIDER } from "./cerebras.js";
 import { OPENROUTER_PROVIDER } from "./openrouter.js";
+import { NVIDIA_NIM_PROVIDER } from "./nvidia-nim.js";
 
 /**
  * Registry of all available providers
@@ -29,6 +35,7 @@ export const PROVIDER_REGISTRY: Record<ProviderType, ProviderDefinition> = {
   groq: GROQ_PROVIDER,
   cerebras: CEREBRAS_PROVIDER,
   openrouter: OPENROUTER_PROVIDER,
+  "nvidia-nim": NVIDIA_NIM_PROVIDER,
 };
 
 /**

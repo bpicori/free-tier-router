@@ -3,7 +3,7 @@ import type { ModelConfig, QuotaStatus } from "./models.js";
 /**
  * Supported provider types
  */
-export type ProviderType = "groq" | "cerebras" | "openrouter";
+export type ProviderType = "groq" | "cerebras" | "openrouter" | "nvidia-nim";
 
 /**
  * Provider configuration - defines how to connect to a provider

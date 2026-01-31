@@ -14,7 +14,8 @@ config/
 └── providers/
     ├── groq.yml         # Groq provider mappings
     ├── cerebras.yml     # Cerebras provider mappings
-    └── openrouter.yml   # OpenRouter provider mappings
+    ├── openrouter.yml   # OpenRouter provider mappings
+    └── nvidia-nim.yml   # NVIDIA NIM provider mappings
 ```
 
 ### models.yml - Model Definitions
@@ -65,9 +66,9 @@ Models are organized into quality tiers (higher = more capable):
 | Tier | Category | Size/Type | Examples |
 |------|----------|-----------|----------|
 | 5 | Frontier/Reasoning | Reasoning models | DeepSeek R1 |
-| 4 | XL | 100B+ params | Llama 3.1 405B |
+| 4 | XL | 100B+ params | GPT-OSS 120B, Llama 3.1 405B |
 | 3 | Large | 36-100B params | Llama 3.3 70B, Qwen 2.5 72B |
-| 2 | Medium | 9-35B params | Qwen 2.5 32B, Gemma 2 27B |
+| 2 | Medium | 9-35B params | Qwen 3 32B, Gemma 2 27B |
 | 1 | Small | 1-8B params | Llama 3.1 8B, Gemma 2 9B |
 
 ## Alias Types

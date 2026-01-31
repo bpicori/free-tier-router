@@ -26,6 +26,8 @@ import type { ProviderConfig, RoutingStrategyType } from "../src/types/config.js
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
 
 // ─────────────────────────────────────────────────────────────────
 // Helper Functions
@@ -267,6 +269,8 @@ const testCustomAliases = async () => {
   const providers: ProviderConfig[] = [];
   if (GROQ_API_KEY) providers.push({ type: "groq", apiKey: GROQ_API_KEY });
   if (CEREBRAS_API_KEY) providers.push({ type: "cerebras", apiKey: CEREBRAS_API_KEY });
+  if (OPENROUTER_API_KEY) providers.push({ type: "openrouter", apiKey: OPENROUTER_API_KEY });
+  if (NVIDIA_NIM_API_KEY) providers.push({ type: "nvidia-nim", apiKey: NVIDIA_NIM_API_KEY });
 
   if (providers.length === 0) {
     console.log("⚠️  No API keys available");
@@ -311,6 +315,8 @@ const testStrategies = async () => {
   const providers: ProviderConfig[] = [];
   if (GROQ_API_KEY) providers.push({ type: "groq", apiKey: GROQ_API_KEY, priority: 1 });
   if (CEREBRAS_API_KEY) providers.push({ type: "cerebras", apiKey: CEREBRAS_API_KEY, priority: 2 });
+  if (OPENROUTER_API_KEY) providers.push({ type: "openrouter", apiKey: OPENROUTER_API_KEY, priority: 3 });
+  if (NVIDIA_NIM_API_KEY) providers.push({ type: "nvidia-nim", apiKey: NVIDIA_NIM_API_KEY, priority: 4 });
 
   if (providers.length < 2) {
     console.log("⚠️  Need at least 2 providers to test strategies");
@@ -365,10 +371,26 @@ const main = async () => {
     console.log("⚠️  CEREBRAS_API_KEY not set");
   }
 
+  if (OPENROUTER_API_KEY) {
+    providers.push({ type: "openrouter", apiKey: OPENROUTER_API_KEY });
+    console.log("✅ OPENROUTER_API_KEY found");
+  } else {
+    console.log("⚠️  OPENROUTER_API_KEY not set");
+  }
+
+  if (NVIDIA_NIM_API_KEY) {
+    providers.push({ type: "nvidia-nim", apiKey: NVIDIA_NIM_API_KEY });
+    console.log("✅ NVIDIA_NIM_API_KEY found");
+  } else {
+    console.log("⚠️  NVIDIA_NIM_API_KEY not set");
+  }
+
   if (providers.length === 0) {
     console.log("\n💡 To run tests, set your API keys:");
     console.log("   export GROQ_API_KEY=your-key-here");
     console.log("   export CEREBRAS_API_KEY=your-key-here");
+    console.log("   export OPENROUTER_API_KEY=your-key-here");
+    console.log("   export NVIDIA_NIM_API_KEY=your-key-here");
     console.log("\n   Or copy playground/.env.example to playground/.env");
     return;
   }

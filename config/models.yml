@@ -4,6 +4,13 @@
 # Each model has a unique ID, quality tier, family, and optional aliases.
 
 models:
+  # Tier 4 - XL Models (100B+)
+  - id: gpt-oss-120b
+    tier: 4
+    family: gpt-oss
+    aliases:
+      - openai/gpt-oss-120b
+
   # Tier 3 - Large Models (36-100B)
   - id: llama-3.3-70b
     tier: 3
@@ -31,6 +38,9 @@ models:
 generic_aliases:
   best:
     min_tier: 1
+
+  best-xl:
+    tier: 4
 
   best-large:
     tier: 3

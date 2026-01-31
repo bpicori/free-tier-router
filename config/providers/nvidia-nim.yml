@@ -1,0 +1,33 @@
+# NVIDIA NIM Provider Configuration
+#
+# NVIDIA NIM provides free access to various LLMs with an OpenAI-compatible API.
+# Free tier: 40 requests/minute (requires phone number verification)
+# Note: Models may have context window limitations
+# Docs: https://docs.api.nvidia.com/nim/reference/llm-apis
+
+name: nvidia-nim
+display_name: NVIDIA NIM
+base_url: https://integrate.api.nvidia.com/v1
+
+defaults:
+  limits:
+    requests_per_minute: 40
+
+models:
+  # Tier 4 - XL Models
+  - canonical: gpt-oss-120b
+    id: openai/gpt-oss-120b
+    limits:
+      requests_per_minute: 40
+
+  # Tier 3 - Large Models
+  - canonical: llama-3.3-70b
+    id: meta/llama-3.3-70b-instruct
+    limits:
+      requests_per_minute: 40
+
+  # Tier 1 - Small Models
+  - canonical: llama-3.1-8b
+    id: meta/llama-3.1-8b-instruct
+    limits:
+      requests_per_minute: 40

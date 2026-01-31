@@ -16,6 +16,7 @@ const router = createRouter({
     { type: "groq", apiKey: process.env.GROQ_API_KEY },
     { type: "cerebras", apiKey: process.env.CEREBRAS_API_KEY },
     { type: "openrouter", apiKey: process.env.OPENROUTER_API_KEY },
+    { type: "nvidia-nim", apiKey: process.env.NVIDIA_NIM_API_KEY },
   ],
   strategy: "least-used",
 });

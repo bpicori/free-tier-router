@@ -13,6 +13,7 @@ Providers are external LLM inference services that offer OpenAI-compatible APIs.
 | **Groq** | `https://api.groq.com/openai/v1` | 30 req/min, varies by model |
 | **Cerebras** | `https://api.cerebras.ai/v1` | 30 req/min, 14,400 req/day |
 | **OpenRouter** | `https://openrouter.ai/api/v1` | 20 req/min, 50 req/day |
+| **NVIDIA NIM** | `https://integrate.api.nvidia.com/v1` | 40 req/min (phone verification required) |
 
 ## Configuration Files
 
@@ -20,13 +21,15 @@ Providers are external LLM inference services that offer OpenAI-compatible APIs.
 config/providers/
 ├── groq.yml        # Groq configuration
 ├── cerebras.yml    # Cerebras configuration
-└── openrouter.yml  # OpenRouter configuration
+├── openrouter.yml  # OpenRouter configuration
+└── nvidia-nim.yml  # NVIDIA NIM configuration
 
 src/providers/
 ├── index.ts        # Provider registry
 ├── groq.ts         # Groq provider implementation
 ├── cerebras.ts     # Cerebras provider implementation
-└── openrouter.ts   # OpenRouter provider implementation
+├── openrouter.ts   # OpenRouter provider implementation
+└── nvidia-nim.ts   # NVIDIA NIM provider implementation
 ```
 
 ## Provider Configuration Structure
@@ -276,6 +279,7 @@ export const PROVIDER_REGISTRY: Record<ProviderType, ProviderDefinition> = {
   groq: GROQ_PROVIDER,
   cerebras: CEREBRAS_PROVIDER,
   openrouter: OPENROUTER_PROVIDER,
+  "nvidia-nim": NVIDIA_NIM_PROVIDER,
   "new-provider": NEW_PROVIDER,
 };
 ```

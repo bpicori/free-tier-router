@@ -17,6 +17,13 @@ defaults:
 
 # Model mappings: canonical ID -> Groq's model ID
 models:
+  # Tier 4 - XL Models
+  - canonical: gpt-oss-120b
+    id: openai/gpt-oss-120b
+    limits:
+      requests_per_day: 1000
+      tokens_per_minute: 8000
+
   # Tier 3 - Large Models
   - canonical: llama-3.3-70b
     id: llama-3.3-70b-versatile

@@ -1,5 +1,5 @@
 /**
- * Playground: Test Groq and Cerebras providers
+ * Playground: Test all providers
  *
  * Usage:
  *   1. Copy .env.example to .env and add your API keys
@@ -10,7 +10,12 @@
  */
 
 import OpenAI from "openai";
-import { GROQ_PROVIDER, CEREBRAS_PROVIDER } from "../src/providers/index.js";
+import {
+  GROQ_PROVIDER,
+  CEREBRAS_PROVIDER,
+  OPENROUTER_PROVIDER,
+  NVIDIA_NIM_PROVIDER,
+} from "../src/providers/index.js";
 import type { ProviderDefinition } from "../src/types/provider.js";
 
 // ─────────────────────────────────────────────────────────────────
@@ -19,6 +24,8 @@ import type { ProviderDefinition } from "../src/types/provider.js";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
 
 const TEST_MESSAGE = "What is 2 + 2? Answer in one word.";
 
@@ -142,10 +149,36 @@ const main = async () => {
     log("⚠️  CEREBRAS_API_KEY not set - skipping Cerebras tests");
   }
 
-  if (!GROQ_API_KEY && !CEREBRAS_API_KEY) {
+  // Test OpenRouter
+  if (OPENROUTER_API_KEY) {
+    const openrouterClient = createClient(OPENROUTER_PROVIDER, OPENROUTER_API_KEY);
+    const openrouterModel =
+      OPENROUTER_PROVIDER.models[0]?.id ?? "openai/gpt-oss-120b:free";
+
+    await testCompletion("OpenRouter", openrouterClient, openrouterModel);
+    await testStreamingCompletion("OpenRouter", openrouterClient, openrouterModel);
+  } else {
+    log("⚠️  OPENROUTER_API_KEY not set - skipping OpenRouter tests");
+  }
+
+  // Test NVIDIA NIM
+  if (NVIDIA_NIM_API_KEY) {
+    const nvidiaNimClient = createClient(NVIDIA_NIM_PROVIDER, NVIDIA_NIM_API_KEY);
+    const nvidiaNimModel =
+      NVIDIA_NIM_PROVIDER.models[0]?.id ?? "openai/gpt-oss-120b";
+
+    await testCompletion("NVIDIA NIM", nvidiaNimClient, nvidiaNimModel);
+    await testStreamingCompletion("NVIDIA NIM", nvidiaNimClient, nvidiaNimModel);
+  } else {
+    log("⚠️  NVIDIA_NIM_API_KEY not set - skipping NVIDIA NIM tests");
+  }
+
+  if (!GROQ_API_KEY && !CEREBRAS_API_KEY && !OPENROUTER_API_KEY && !NVIDIA_NIM_API_KEY) {
     console.log("\n💡 To run tests, set your API keys:");
     console.log("   export GROQ_API_KEY=your-key-here");
     console.log("   export CEREBRAS_API_KEY=your-key-here");
+    console.log("   export OPENROUTER_API_KEY=your-key-here");
+    console.log("   export NVIDIA_NIM_API_KEY=your-key-here");
     console.log("\n   Or copy playground/.env.example to playground/.env");
   }
 

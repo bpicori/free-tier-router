@@ -15,3 +15,6 @@ export * from "./models/index.js";
 
 // Export state stores
 export * from "./state/index.js";
+
+// Export rate limit tracking
+export * from "./rate-limit/index.js";

@@ -16,7 +16,7 @@ todos:
     status: completed
   - id: rate-tracker
     content: Implement RateLimitTracker with sliding window algorithm, multi-window tracking, and 429 cooldown
-    status: pending
+    status: completed
   - id: provider-base
     content: Create Provider base class with OpenAI-compatible interface and streaming support
     status: pending

@@ -1,0 +1,61 @@
+---
+description: Testing conventions - tests as documentation
+globs: "**/*.test.ts"
+alwaysApply: false
+---
+
+# Testing Conventions
+
+Tests serve as documentation. Write them to teach readers how the code works.
+
+## Structure
+
+Use `describe` blocks to group by feature/concern with visual separators:
+
+```typescript
+describe("FeatureName", () => {
+  // ─────────────────────────────────────────────────────────────────
+  // Section Name
+  // ─────────────────────────────────────────────────────────────────
+
+  describe("methodName", () => {
+    it("describes expected behavior in plain English", async () => {
+      // Arrange → Act → Assert
+    });
+  });
+});
+```
+
+## Test Names
+
+Write test names as behavior specifications:
+
+```typescript
+// ❌ BAD - implementation detail
+it("calls store.incrementUsage", () => {});
+
+// ✅ GOOD - documents behavior
+it("tracks requests and tokens across all time windows", () => {});
+it("returns false when request limit exhausted", () => {});
+```
+
+## Comments as Documentation
+
+Add comments explaining calculations or non-obvious values:
+
+```typescript
+// ✅ GOOD - explains the math
+const messages = [
+  { content: "You are a helpful assistant." }, // 28 chars → 7 + 4 = 11 tokens
+  { content: "Hello!" }, // 6 chars → 2 + 4 = 6 tokens
+];
+// 11 + 6 + 3 (chat overhead) = 20
+expect(estimateChatTokens(messages)).toBe(20);
+```
+
+## Be Pragmatic
+
+- Test behavior, not implementation
+- One assertion per test when possible
+- Use `beforeEach` for shared setup
+- Prefer real implementations over mocks (e.g., `createMemoryStore()`)

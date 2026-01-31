@@ -40,28 +40,29 @@ export class AllProvidersExhaustedError extends FreeTierRouterError {
  * Error thrown when a provider returns a rate limit error (429)
  */
 export class RateLimitError extends FreeTierRouterError {
-  /** Provider that returned the rate limit */
-  readonly provider: ProviderType;
-  /** Model that was rate limited */
-  readonly model: string;
+  /** Provider that returned the rate limit (optional at HTTP layer) */
+  readonly provider?: ProviderType;
+  /** Model that was rate limited (optional at HTTP layer) */
+  readonly model?: string;
   /** Time when the rate limit resets (from Retry-After header) */
   readonly resetAt?: Date;
-  /** Raw Retry-After header value */
-  readonly retryAfter?: string;
+  /** Retry-After value in seconds */
+  readonly retryAfterSeconds?: number;
 
   constructor(
-    provider: ProviderType,
-    model: string,
+    message: string,
     resetAt?: Date,
-    retryAfter?: string
+    retryAfterSeconds?: number,
+    provider?: ProviderType,
+    model?: string
   ) {
     const resetMsg = resetAt ? ` Resets at: ${resetAt.toISOString()}` : "";
-    super(`Rate limited by ${provider} for model ${model}.${resetMsg}`);
+    super(`${message}${resetMsg}`);
     this.name = "RateLimitError";
     this.provider = provider;
     this.model = model;
     this.resetAt = resetAt;
-    this.retryAfter = retryAfter;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -69,20 +70,21 @@ export class RateLimitError extends FreeTierRouterError {
  * Error thrown when a provider returns an API error
  */
 export class ProviderError extends FreeTierRouterError {
-  /** Provider that returned the error */
-  readonly provider: ProviderType;
+  /** Provider that returned the error (optional at HTTP layer) */
+  readonly provider?: ProviderType;
   /** HTTP status code */
   readonly statusCode: number;
   /** Raw error response from provider */
   readonly rawError?: unknown;
 
   constructor(
-    provider: ProviderType,
-    statusCode: number,
     message: string,
-    rawError?: unknown
+    statusCode: number,
+    rawError?: unknown,
+    provider?: ProviderType
   ) {
-    super(`Provider ${provider} error (${statusCode}): ${message}`);
+    const providerMsg = provider ? `Provider ${provider} error: ` : "";
+    super(`${providerMsg}${message}`);
     this.name = "ProviderError";
     this.provider = provider;
     this.statusCode = statusCode;

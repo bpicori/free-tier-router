@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: provider-base
     content: Create Provider base class with OpenAI-compatible interface and streaming support
-    status: pending
+    status: completed
   - id: providers
     content: "Implement concrete providers: Groq, Cerebras"
     status: pending

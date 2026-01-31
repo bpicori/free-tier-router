@@ -11,10 +11,16 @@ import type { ProviderDefinition, ProviderType } from "../types/provider.js";
 // Re-export provider definitions
 export { GROQ_PROVIDER, getGroqModels, resetGroqProvider } from "./groq.js";
 export { CEREBRAS_PROVIDER, getCerebrasModels, resetCerebrasProvider } from "./cerebras.js";
+export {
+  OPENROUTER_PROVIDER,
+  getOpenRouterModels,
+  resetOpenRouterProvider,
+} from "./openrouter.js";
 
 // Import for registry
 import { GROQ_PROVIDER } from "./groq.js";
 import { CEREBRAS_PROVIDER } from "./cerebras.js";
+import { OPENROUTER_PROVIDER } from "./openrouter.js";
 
 /**
  * Registry of all available providers
@@ -22,6 +28,7 @@ import { CEREBRAS_PROVIDER } from "./cerebras.js";
 export const PROVIDER_REGISTRY: Record<ProviderType, ProviderDefinition> = {
   groq: GROQ_PROVIDER,
   cerebras: CEREBRAS_PROVIDER,
+  openrouter: OPENROUTER_PROVIDER,
 };
 
 /**

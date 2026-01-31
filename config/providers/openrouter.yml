@@ -1,0 +1,36 @@
+# OpenRouter Provider Configuration
+#
+# OpenRouter provides free access to various LLMs with an OpenAI-compatible API.
+# Free tier: 20 requests/minute, 50 requests/day
+# Docs: https://openrouter.ai/docs
+
+name: openrouter
+display_name: OpenRouter
+base_url: https://openrouter.ai/api/v1
+
+defaults:
+  limits:
+    requests_per_minute: 20
+    requests_per_day: 50
+
+models:
+  # Tier 3 - Large Models
+  - canonical: llama-3.3-70b
+    id: meta-llama/llama-3.3-70b-instruct:free
+    limits:
+      requests_per_minute: 20
+      requests_per_day: 50
+
+  # Tier 2 - Medium Models
+  - canonical: qwen-3-32b
+    id: qwen/qwen3-32b:free
+    limits:
+      requests_per_minute: 20
+      requests_per_day: 50
+
+  # Tier 1 - Small Models
+  - canonical: llama-3.1-8b
+    id: meta-llama/llama-3.1-8b-instruct:free
+    limits:
+      requests_per_minute: 20
+      requests_per_day: 50

@@ -1,3 +1,7 @@
+---
+alwaysApply: true
+---
+
 # Knowledge First
 
 Before starting any implementation or making changes to the codebase, always check the `knowledge/` folder for relevant documentation.

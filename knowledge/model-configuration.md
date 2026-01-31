@@ -13,7 +13,8 @@ config/
 ├── models.yml           # Canonical model definitions
 └── providers/
     ├── groq.yml         # Groq provider mappings
-    └── cerebras.yml     # Cerebras provider mappings
+    ├── cerebras.yml     # Cerebras provider mappings
+    └── openrouter.yml   # OpenRouter provider mappings
 ```
 
 ### models.yml - Model Definitions
@@ -251,6 +252,8 @@ models:
 ```
 
 The config loader automatically discovers and loads all provider YAML files from `config/providers/`.
+
+For detailed instructions on adding new providers, see [Providers](./providers.md).
 
 ## Rate Limits
 

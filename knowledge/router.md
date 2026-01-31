@@ -15,6 +15,7 @@ const router = createRouter({
   providers: [
     { type: "groq", apiKey: process.env.GROQ_API_KEY },
     { type: "cerebras", apiKey: process.env.CEREBRAS_API_KEY },
+    { type: "openrouter", apiKey: process.env.OPENROUTER_API_KEY },
   ],
   strategy: "least-used",
 });
@@ -225,4 +226,6 @@ try {
 
 ## See Also
 
-- [Model Aliases](./model-aliases.md) - How model name resolution works
+- [Providers](./providers.md) - Available providers and how to add new ones
+- [Model Configuration](./model-configuration.md) - How model name resolution works
+- [Rate Limiting](./rate-limit.md) - How rate limits work

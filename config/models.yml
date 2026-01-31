@@ -4,24 +4,6 @@
 # Each model has a unique ID, quality tier, family, and optional aliases.
 
 models:
-  # Tier 5 - Frontier/Reasoning Models
-  - id: deepseek-r1
-    tier: 5
-    family: deepseek
-    aliases:
-      - deepseek-r1-0528
-      - deepseek-ai/deepseek-r1
-      - deepseek-r1-distill-llama-70b
-
-  # Tier 4 - XL Models (100B+)
-  - id: llama-3.1-405b
-    tier: 4
-    family: llama
-    aliases:
-      - llama-3.1-405b-instruct
-      - meta-llama/llama-3.1-405b
-      - meta-llama/llama-3.1-405b-instruct
-
   # Tier 3 - Large Models (36-100B)
   - id: llama-3.3-70b
     tier: 3
@@ -29,110 +11,35 @@ models:
     aliases:
       - llama-3.3-70b-versatile
       - llama-3.3-70b-instruct
-      - llama-3.3-70b-specdec
-      - meta-llama/llama-3.3-70b
-      - meta-llama/llama-3.3-70b-instruct
-
-  - id: llama-3.1-70b
-    tier: 3
-    family: llama
-    aliases:
-      - llama-3.1-70b-versatile
-      - llama-3.1-70b-instruct
-      - meta-llama/llama-3.1-70b
-      - meta-llama/llama-3.1-70b-instruct
-
-  - id: qwen-2.5-72b
-    tier: 3
-    family: qwen
-    aliases:
-      - qwen-2.5-72b-instruct
-      - qwen/qwen-2.5-72b
-      - qwen/qwen-2.5-72b-instruct
 
   # Tier 2 - Medium Models (9-35B)
-  - id: qwen-2.5-32b
+  - id: qwen-3-32b
     tier: 2
     family: qwen
     aliases:
-      - qwen-2.5-32b-instruct
-      - qwen/qwen-2.5-32b
-      - qwen/qwen-2.5-32b-instruct
-      - qwen-qwq-32b
-
-  - id: gemma-2-27b
-    tier: 2
-    family: gemma
-    aliases:
-      - gemma-2-27b-it
-      - google/gemma-2-27b
-      - google/gemma-2-27b-it
-
-  - id: mistral-small-24b
-    tier: 2
-    family: mistral
-    aliases:
-      - mistral-small-24b-instruct
-      - mistralai/mistral-small-24b
-      - mistral-saba-24b
+      - qwen/qwen3-32b
 
   # Tier 1 - Small Models (1-8B)
-  - id: llama-3.2-3b
-    tier: 1
-    family: llama
-    aliases:
-      - llama-3.2-3b-preview
-      - llama-3.2-3b-instruct
-      - meta-llama/llama-3.2-3b
-      - meta-llama/llama-3.2-3b-instruct
-
-  - id: llama-3.2-1b
-    tier: 1
-    family: llama
-    aliases:
-      - llama-3.2-1b-preview
-      - llama-3.2-1b-instruct
-      - meta-llama/llama-3.2-1b
-      - meta-llama/llama-3.2-1b-instruct
-
   - id: llama-3.1-8b
     tier: 1
     family: llama
     aliases:
       - llama-3.1-8b-instant
       - llama-3.1-8b-instruct
-      - meta-llama/llama-3.1-8b
-      - meta-llama/llama-3.1-8b-instruct
-
-  - id: gemma-2-9b
-    tier: 1
-    family: gemma
-    aliases:
-      - gemma-2-9b-it
-      - google/gemma-2-9b
-      - google/gemma-2-9b-it
 
 # Generic aliases map to quality tiers
-# Users can request "best-large" instead of a specific model
 generic_aliases:
-  # Best available model
   best:
     min_tier: 1
 
-  # Size-based aliases
-  best-xl:
-    tier: 4
   best-large:
     tier: 3
+
   best-medium:
     tier: 2
+
   best-small:
     tier: 1
 
-  # Size shortcuts
-  "70b":
-    tier: 3
-  "32b":
-    tier: 2
-  "8b":
+  fast:
     tier: 1

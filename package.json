@@ -26,7 +26,8 @@
     "prepublishOnly": "npm run build",
     "playground": "tsx --env-file=playground/.env playground/test-providers.ts",
     "playground:router": "tsx --env-file=playground/.env playground/test-router.ts",
-    "playground:rate-limit": "tsx playground/test-rate-limit.ts"
+    "playground:rate-limit": "tsx playground/test-rate-limit.ts",
+    "playground:chat": "tsx --env-file=playground/.env playground/chat.ts"
   },
   "keywords": [
     "llm",

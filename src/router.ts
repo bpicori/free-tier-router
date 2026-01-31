@@ -121,6 +121,11 @@ export interface Router {
   >;
 
   /**
+   * Clear all cooldowns (useful for debugging/testing)
+   */
+  clearAllCooldowns(): Promise<void>;
+
+  /**
    * Close the router and release resources
    */
   close(): Promise<void>;
@@ -359,6 +364,13 @@ export const createRouter = (config: FreeTierRouterConfig): Router => {
   };
 
   /**
+   * Clear all cooldowns and usage tracking (for debugging/testing)
+   */
+  const clearAllCooldowns = async (): Promise<void> => {
+    await stateStore.clear();
+  };
+
+  /**
    * Close the router
    */
   const close = async (): Promise<void> => {
@@ -392,6 +404,7 @@ export const createRouter = (config: FreeTierRouterConfig): Router => {
     listModels,
     isModelAvailable,
     getQuotaStatus,
+    clearAllCooldowns,
     close,
   };
 };

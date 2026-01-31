@@ -24,3 +24,6 @@ export * from "./providers/index.js";
 
 // Export routing strategies
 export * from "./strategies/index.js";
+
+// Export main router
+export { createRouter, type Router, type CompletionMetadata } from "./router.js";

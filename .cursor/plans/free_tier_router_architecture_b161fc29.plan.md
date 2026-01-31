@@ -13,7 +13,7 @@ todos:
     status: completed
   - id: state-store
     content: Implement StateStore interface with MemoryStore, FileStore, and RedisStore
-    status: pending
+    status: completed
   - id: rate-tracker
     content: Implement RateLimitTracker with sliding window algorithm, multi-window tracking, and 429 cooldown
     status: pending

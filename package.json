@@ -1,0 +1,47 @@
+{
+  "name": "free-tier-router",
+  "version": "0.1.0",
+  "description": "Route LLM API requests across multiple free-tier providers with intelligent rate limit management",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "llm",
+    "ai",
+    "openai",
+    "groq",
+    "cerebras",
+    "free-tier",
+    "router",
+    "rate-limit"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.1.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

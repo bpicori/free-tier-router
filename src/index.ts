@@ -21,3 +21,6 @@ export * from "./rate-limit/index.js";
 
 // Export providers
 export * from "./providers/index.js";
+
+// Export routing strategies
+export * from "./strategies/index.js";

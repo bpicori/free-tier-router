@@ -25,7 +25,7 @@ todos:
     status: completed
   - id: strategies
     content: "Implement routing strategies: Priority, LeastUsed"
-    status: pending
+    status: completed
   - id: router
     content: Implement main Router class with model-first selection, retry logic, and provider failover
     status: pending

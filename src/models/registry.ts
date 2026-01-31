@@ -25,8 +25,6 @@ export interface ModelRegistryEntry {
   qualityTier: ModelQualityTier;
   /** Rate limits (provider-specific) */
   limits: RateLimits;
-  /** Tags for categorization */
-  tags: string[];
 }
 
 /**
@@ -41,8 +39,6 @@ export interface ModelQuery {
   tier?: ModelQualityTier;
   /** Filter by provider */
   provider?: ProviderType;
-  /** Filter by tag */
-  tag?: string;
   /** Filter by model family */
   family?: string;
 }
@@ -81,7 +77,6 @@ export class ModelRegistry {
           provider,
           qualityTier: definition.qualityTier,
           limits: this.getDefaultLimits(provider, definition.id),
-          tags: definition.tags,
         };
 
         // Index by canonical ID
@@ -178,8 +173,6 @@ export class ModelRegistry {
             minTier: aliasConfig.minTier,
             modelName: undefined,
           };
-        } else if (aliasConfig.tag) {
-          query = { ...query, tag: aliasConfig.tag, modelName: undefined };
         }
       }
     }
@@ -204,12 +197,6 @@ export class ModelRegistry {
 
     if (query.minTier !== undefined) {
       results = results.filter((e) => e.qualityTier >= query.minTier!);
-    }
-
-    if (query.tag) {
-      results = results.filter((e) =>
-        e.tags.some((t) => t.toLowerCase() === query.tag!.toLowerCase())
-      );
     }
 
     if (query.family) {
@@ -295,8 +282,7 @@ export class ModelRegistry {
     providerModelId: string,
     provider: ProviderType,
     qualityTier: ModelQualityTier,
-    limits: RateLimits = {},
-    tags: string[] = []
+    limits: RateLimits = {}
   ): void {
     const entry: ModelRegistryEntry = {
       canonicalId,
@@ -304,7 +290,6 @@ export class ModelRegistry {
       provider,
       qualityTier,
       limits,
-      tags,
     };
 
     // Index by canonical ID
@@ -330,7 +315,6 @@ export class ModelRegistry {
       aliases: [entry.canonicalId],
       qualityTier: entry.qualityTier,
       limits: entry.limits,
-      tags: entry.tags,
     };
   }
 

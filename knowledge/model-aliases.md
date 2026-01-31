@@ -28,7 +28,7 @@ This allows users to use:
 
 ### 2. Generic Aliases
 
-Defined in `GENERIC_MODEL_ALIASES`, these map capability/size names to quality tiers or tags:
+Defined in `GENERIC_MODEL_ALIASES`, these map capability/size names to quality tiers:
 
 | Alias | Resolves to |
 |-------|-------------|
@@ -37,9 +37,6 @@ Defined in `GENERIC_MODEL_ALIASES`, these map capability/size names to quality t
 | `best-large` | Tier 3 models (36-100B params, e.g., 70B) |
 | `best-medium` | Tier 2 models (9-35B params, e.g., 32B) |
 | `best-small` | Tier 1 models (1-8B params) |
-| `best-reasoning` | Models tagged with "reasoning" |
-| `best-fast` | Models tagged with "fast" |
-| `best-code` | Models tagged with "code" |
 | `70b` | Tier 3 models |
 | `32b` | Tier 2 models |
 | `8b` | Tier 1 models |
@@ -141,6 +138,5 @@ To add a new model alias, update `MODEL_DEFINITIONS` in `src/models/aliases.ts`:
   ],
   providers: ["groq", "cerebras"],        // Which providers offer this model
   family: "new-model",                    // Model family
-  tags: ["instruct"],                     // Tags for generic alias matching
 }
 ```

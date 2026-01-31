@@ -38,8 +38,6 @@ export interface ModelConfig {
   qualityTier: ModelQualityTier;
   /** Rate limits for this model */
   limits: RateLimits;
-  /** Optional tags for categorization (e.g., "reasoning", "code", "vision") */
-  tags?: string[];
 }
 
 /**

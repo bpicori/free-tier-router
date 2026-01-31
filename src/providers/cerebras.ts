@@ -31,7 +31,6 @@ const CEREBRAS_MODELS: ModelConfig[] = [
       tokensPerMinute: 60000,
       tokensPerDay: 1000000,
     },
-    tags: ["instruct", "versatile"],
   },
   {
     id: "llama-3.1-70b",
@@ -44,7 +43,6 @@ const CEREBRAS_MODELS: ModelConfig[] = [
       tokensPerMinute: 60000,
       tokensPerDay: 1000000,
     },
-    tags: ["instruct"],
   },
   {
     id: "qwen-2.5-72b",
@@ -57,7 +55,6 @@ const CEREBRAS_MODELS: ModelConfig[] = [
       tokensPerMinute: 60000,
       tokensPerDay: 1000000,
     },
-    tags: ["instruct"],
   },
 
   // Tier 2 - Medium Models
@@ -72,7 +69,6 @@ const CEREBRAS_MODELS: ModelConfig[] = [
       tokensPerMinute: 60000,
       tokensPerDay: 1000000,
     },
-    tags: ["instruct"],
   },
 
   // Tier 1 - Small Models
@@ -87,7 +83,6 @@ const CEREBRAS_MODELS: ModelConfig[] = [
       tokensPerMinute: 60000,
       tokensPerDay: 1000000,
     },
-    tags: ["instruct", "small", "fast"],
   },
   {
     id: "llama-3.2-1b",
@@ -100,7 +95,6 @@ const CEREBRAS_MODELS: ModelConfig[] = [
       tokensPerMinute: 60000,
       tokensPerDay: 1000000,
     },
-    tags: ["instruct", "tiny", "fast"],
   },
   {
     id: "llama-3.1-8b",
@@ -113,7 +107,6 @@ const CEREBRAS_MODELS: ModelConfig[] = [
       tokensPerMinute: 60000,
       tokensPerDay: 1000000,
     },
-    tags: ["instruct", "fast"],
   },
 ];
 

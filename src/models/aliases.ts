@@ -15,8 +15,6 @@ export interface ModelDefinition {
   providers: ProviderType[];
   /** Model family (e.g., "llama", "gemma", "qwen") */
   family: string;
-  /** Tags for categorization */
-  tags: string[];
 }
 
 /**
@@ -35,7 +33,6 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     ],
     providers: ["groq"],
     family: "deepseek",
-    tags: ["reasoning", "frontier"],
   },
 
   // Tier 4 - XL Models (100B+)
@@ -49,7 +46,6 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     ],
     providers: [],
     family: "llama",
-    tags: ["instruct", "xl"],
   },
 
   // Tier 3 - Large Models (36-100B)
@@ -65,7 +61,6 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     ],
     providers: ["groq", "cerebras"],
     family: "llama",
-    tags: ["instruct", "versatile"],
   },
   {
     id: "llama-3.1-70b",
@@ -78,7 +73,6 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     ],
     providers: ["groq", "cerebras"],
     family: "llama",
-    tags: ["instruct"],
   },
   {
     id: "qwen-2.5-72b",
@@ -90,7 +84,6 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     ],
     providers: ["cerebras"],
     family: "qwen",
-    tags: ["instruct"],
   },
 
   // Tier 2 - Medium Models (9-35B)
@@ -105,7 +98,6 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     ],
     providers: ["groq", "cerebras"],
     family: "qwen",
-    tags: ["instruct"],
   },
   {
     id: "gemma-2-27b",
@@ -113,7 +105,6 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     aliases: ["gemma-2-27b-it", "google/gemma-2-27b", "google/gemma-2-27b-it"],
     providers: ["groq"],
     family: "gemma",
-    tags: ["instruct"],
   },
   {
     id: "mistral-small-24b",
@@ -125,7 +116,6 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     ],
     providers: ["groq"],
     family: "mistral",
-    tags: ["instruct"],
   },
 
   // Tier 1 - Small Models (1-8B)
@@ -140,7 +130,6 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     ],
     providers: ["groq", "cerebras"],
     family: "llama",
-    tags: ["instruct", "small", "fast"],
   },
   {
     id: "llama-3.2-1b",
@@ -153,7 +142,6 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     ],
     providers: ["groq", "cerebras"],
     family: "llama",
-    tags: ["instruct", "tiny", "fast"],
   },
   {
     id: "llama-3.1-8b",
@@ -166,7 +154,6 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     ],
     providers: ["groq", "cerebras"],
     family: "llama",
-    tags: ["instruct", "fast"],
   },
   {
     id: "gemma-2-9b",
@@ -174,16 +161,15 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     aliases: ["gemma-2-9b-it", "google/gemma-2-9b", "google/gemma-2-9b-it"],
     providers: ["groq"],
     family: "gemma",
-    tags: ["instruct"],
   },
 ];
 
 /**
- * Generic model aliases that map to quality tiers or tags
+ * Generic model aliases that map to quality tiers
  */
 export const GENERIC_MODEL_ALIASES: Record<
   string,
-  { tier?: ModelQualityTier; tag?: string; minTier?: ModelQualityTier }
+  { tier?: ModelQualityTier; minTier?: ModelQualityTier }
 > = {
   // Best available
   best: { minTier: ModelQualityTier.TIER_1 },
@@ -193,11 +179,6 @@ export const GENERIC_MODEL_ALIASES: Record<
   "best-large": { tier: ModelQualityTier.TIER_3 },
   "best-medium": { tier: ModelQualityTier.TIER_2 },
   "best-small": { tier: ModelQualityTier.TIER_1 },
-
-  // Capability-based aliases
-  "best-reasoning": { tag: "reasoning" },
-  "best-fast": { tag: "fast" },
-  "best-code": { tag: "code" },
 
   // Size shortcuts
   "70b": { tier: ModelQualityTier.TIER_3 },
@@ -247,7 +228,6 @@ export function getGenericAliasConfig(
   modelName: string
 ): {
   tier?: ModelQualityTier;
-  tag?: string;
   minTier?: ModelQualityTier;
 } | null {
   return GENERIC_MODEL_ALIASES[modelName.toLowerCase()] ?? null;
@@ -259,15 +239,6 @@ export function getGenericAliasConfig(
 export function getModelsByFamily(family: string): ModelDefinition[] {
   return MODEL_DEFINITIONS.filter(
     (m) => m.family.toLowerCase() === family.toLowerCase()
-  );
-}
-
-/**
- * Get all models with a specific tag
- */
-export function getModelsByTag(tag: string): ModelDefinition[] {
-  return MODEL_DEFINITIONS.filter((m) =>
-    m.tags.some((t) => t.toLowerCase() === tag.toLowerCase())
   );
 }
 

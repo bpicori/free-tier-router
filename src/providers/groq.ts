@@ -29,7 +29,6 @@ const GROQ_MODELS: ModelConfig[] = [
       requestsPerDay: 1000,
       tokensPerMinute: 6000,
     },
-    tags: ["reasoning", "frontier"],
   },
 
   // Tier 3 - Large Models
@@ -43,7 +42,6 @@ const GROQ_MODELS: ModelConfig[] = [
       tokensPerMinute: 6000,
       tokensPerDay: 500000,
     },
-    tags: ["instruct", "versatile"],
   },
   {
     id: "llama-3.3-70b-specdec",
@@ -55,7 +53,6 @@ const GROQ_MODELS: ModelConfig[] = [
       tokensPerMinute: 6000,
       tokensPerDay: 500000,
     },
-    tags: ["instruct", "speculative-decoding"],
   },
   {
     id: "llama-3.1-70b-versatile",
@@ -67,7 +64,6 @@ const GROQ_MODELS: ModelConfig[] = [
       tokensPerMinute: 6000,
       tokensPerDay: 500000,
     },
-    tags: ["instruct"],
   },
 
   // Tier 2 - Medium Models
@@ -81,7 +77,6 @@ const GROQ_MODELS: ModelConfig[] = [
       tokensPerMinute: 6000,
       tokensPerDay: 500000,
     },
-    tags: ["instruct", "reasoning"],
   },
   {
     id: "gemma2-9b-it",
@@ -93,7 +88,6 @@ const GROQ_MODELS: ModelConfig[] = [
       tokensPerMinute: 15000,
       tokensPerDay: 500000,
     },
-    tags: ["instruct"],
   },
   {
     id: "mistral-saba-24b",
@@ -105,7 +99,6 @@ const GROQ_MODELS: ModelConfig[] = [
       tokensPerMinute: 6000,
       tokensPerDay: 500000,
     },
-    tags: ["instruct"],
   },
 
   // Tier 1 - Small Models
@@ -119,7 +112,6 @@ const GROQ_MODELS: ModelConfig[] = [
       tokensPerMinute: 6000,
       tokensPerDay: 500000,
     },
-    tags: ["instruct", "small", "fast"],
   },
   {
     id: "llama-3.2-1b-preview",
@@ -131,7 +123,6 @@ const GROQ_MODELS: ModelConfig[] = [
       tokensPerMinute: 6000,
       tokensPerDay: 500000,
     },
-    tags: ["instruct", "tiny", "fast"],
   },
   {
     id: "llama-3.1-8b-instant",
@@ -143,7 +134,6 @@ const GROQ_MODELS: ModelConfig[] = [
       tokensPerMinute: 6000,
       tokensPerDay: 500000,
     },
-    tags: ["instruct", "fast"],
   },
 ];
 

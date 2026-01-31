@@ -18,7 +18,6 @@ export {
   isGenericAlias,
   getGenericAliasConfig,
   getModelsByFamily,
-  getModelsByTag,
   getModelsByTier,
   getModelsByProvider,
   getModelDefinition,

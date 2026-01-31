@@ -16,15 +16,15 @@ import { getTiersAbove, compareTiers } from "./tiers.js";
  */
 export interface ModelRegistryEntry {
   /** Canonical model ID */
-  canonicalId: string;
+  readonly canonicalId: string;
   /** Provider-specific model ID */
-  providerModelId: string;
+  readonly providerModelId: string;
   /** Provider that offers this model */
-  provider: ProviderType;
+  readonly provider: ProviderType;
   /** Quality tier */
-  qualityTier: ModelQualityTier;
+  readonly qualityTier: ModelQualityTier;
   /** Rate limits (provider-specific) */
-  limits: RateLimits;
+  readonly limits: RateLimits;
 }
 
 /**
@@ -32,325 +32,394 @@ export interface ModelRegistryEntry {
  */
 export interface ModelQuery {
   /** Specific model name or generic alias */
-  modelName?: string;
+  readonly modelName?: string;
   /** Minimum quality tier */
-  minTier?: ModelQualityTier;
+  readonly minTier?: ModelQualityTier;
   /** Exact quality tier */
-  tier?: ModelQualityTier;
+  readonly tier?: ModelQualityTier;
   /** Filter by provider */
-  provider?: ProviderType;
+  readonly provider?: ProviderType;
   /** Filter by model family */
-  family?: string;
+  readonly family?: string;
 }
 
 /**
- * Model Registry - manages model definitions, aliases, and provider mappings
+ * Immutable state for the model registry
+ */
+export type ModelRegistryState = Readonly<{
+  /** Entries indexed by canonical model ID */
+  entries: ReadonlyMap<string, readonly ModelRegistryEntry[]>;
+  /** Alias map for normalizing model names */
+  aliasMap: ReadonlyMap<string, string>;
+  /** Entries indexed by provider */
+  providerModels: ReadonlyMap<ProviderType, readonly ModelRegistryEntry[]>;
+}>;
+
+// ============================================================================
+// Pure Helper Functions
+// ============================================================================
+
+/**
+ * Provider-specific model ID mappings
+ * Different providers may use different names for the same model
+ */
+const PROVIDER_MODEL_MAPPINGS: Readonly<
+  Record<ProviderType, Readonly<Record<string, string>>>
+> = {
+  groq: {
+    "llama-3.3-70b": "llama-3.3-70b-versatile",
+    "llama-3.1-70b": "llama-3.1-70b-versatile",
+    "llama-3.1-8b": "llama-3.1-8b-instant",
+    "llama-3.2-3b": "llama-3.2-3b-preview",
+    "llama-3.2-1b": "llama-3.2-1b-preview",
+    "gemma-2-9b": "gemma2-9b-it",
+    "gemma-2-27b": "gemma2-27b-it",
+    "qwen-2.5-32b": "qwen-qwq-32b",
+    "mistral-small-24b": "mistral-saba-24b",
+    "deepseek-r1": "deepseek-r1-distill-llama-70b",
+  },
+  cerebras: {
+    "llama-3.3-70b": "llama-3.3-70b",
+    "llama-3.1-70b": "llama-3.1-70b",
+    "llama-3.1-8b": "llama-3.1-8b",
+    "llama-3.2-3b": "llama-3.2-3b",
+    "llama-3.2-1b": "llama-3.2-1b",
+    "qwen-2.5-72b": "qwen-2.5-72b",
+    "qwen-2.5-32b": "qwen-2.5-32b",
+  },
+};
+
+/**
+ * Default rate limits by provider (based on free-llm-api-resources)
+ */
+const PROVIDER_DEFAULT_LIMITS: Readonly<Record<ProviderType, RateLimits>> = {
+  groq: {
+    requestsPerMinute: 30,
+    requestsPerDay: 14400,
+    tokensPerMinute: 15000,
+    tokensPerDay: 500000,
+  },
+  cerebras: {
+    requestsPerMinute: 30,
+    requestsPerHour: 900,
+    tokensPerMinute: 60000,
+  },
+};
+
+/**
+ * Get provider-specific model ID for a definition
+ */
+const getProviderModelId = (
+  definition: ModelDefinition,
+  provider: ProviderType
+): string => PROVIDER_MODEL_MAPPINGS[provider]?.[definition.id] ?? definition.id;
+
+/**
+ * Get default rate limits for a provider
+ */
+const getDefaultLimits = (provider: ProviderType): RateLimits =>
+  PROVIDER_DEFAULT_LIMITS[provider] ?? {};
+
+/**
+ * Build a single registry entry for a provider/model combination
+ */
+const buildEntry = (
+  definition: ModelDefinition,
+  provider: ProviderType
+): ModelRegistryEntry => ({
+  canonicalId: definition.id,
+  providerModelId: getProviderModelId(definition, provider),
+  provider,
+  qualityTier: definition.qualityTier,
+  limits: getDefaultLimits(provider),
+});
+
+/**
+ * Build all entries from model definitions
+ */
+const buildEntriesFromDefinitions = (): readonly ModelRegistryEntry[] =>
+  MODEL_DEFINITIONS.flatMap((definition) =>
+    definition.providers.map((provider) => buildEntry(definition, provider))
+  );
+
+/**
+ * Index entries by a key extractor function
+ */
+const indexBy = <K>(
+  entries: readonly ModelRegistryEntry[],
+  keyFn: (entry: ModelRegistryEntry) => K
+): ReadonlyMap<K, readonly ModelRegistryEntry[]> => {
+  const map = new Map<K, ModelRegistryEntry[]>();
+
+  for (const entry of entries) {
+    const key = keyFn(entry);
+    const existing = map.get(key) ?? [];
+    map.set(key, [...existing, entry]);
+  }
+
+  return map;
+};
+
+// ============================================================================
+// Registry State Factory
+// ============================================================================
+
+/**
+ * Create a new model registry state from model definitions
  *
- * This registry maintains:
- * - Quality tier mappings for all known models across providers
- * - Alias mappings to normalize model names
- * - Provider-specific model ID mappings
- * - Generic model mappings (e.g., "best-large" → list of Tier 3+ models)
+ * This is the primary way to create registry state. The returned state
+ * is immutable and can be passed to pure query functions.
  */
-export class ModelRegistry {
-  private entries: Map<string, ModelRegistryEntry[]> = new Map();
-  private aliasMap: Map<string, string>;
-  private providerModels: Map<ProviderType, ModelRegistryEntry[]> = new Map();
+export const createModelRegistry = (): ModelRegistryState => {
+  const entries = buildEntriesFromDefinitions();
 
-  constructor() {
-    this.aliasMap = buildAliasMap();
-    this.initializeFromDefinitions();
-  }
-
-  /**
-   * Initialize registry from model definitions
-   */
-  private initializeFromDefinitions(): void {
-    for (const definition of MODEL_DEFINITIONS) {
-      for (const provider of definition.providers) {
-        // Get the provider-specific model ID (first alias or canonical ID)
-        const providerModelId = this.getProviderModelId(definition, provider);
-
-        const entry: ModelRegistryEntry = {
-          canonicalId: definition.id,
-          providerModelId,
-          provider,
-          qualityTier: definition.qualityTier,
-          limits: this.getDefaultLimits(provider, definition.id),
-        };
-
-        // Index by canonical ID
-        const existing = this.entries.get(definition.id) ?? [];
-        existing.push(entry);
-        this.entries.set(definition.id, existing);
-
-        // Index by provider
-        const providerEntries = this.providerModels.get(provider) ?? [];
-        providerEntries.push(entry);
-        this.providerModels.set(provider, providerEntries);
-      }
-    }
-  }
-
-  /**
-   * Get provider-specific model ID
-   * Different providers may use different names for the same model
-   */
-  private getProviderModelId(
-    definition: ModelDefinition,
-    provider: ProviderType
-  ): string {
-    // Provider-specific model ID mappings
-    const providerMappings: Record<ProviderType, Record<string, string>> = {
-      groq: {
-        "llama-3.3-70b": "llama-3.3-70b-versatile",
-        "llama-3.1-70b": "llama-3.1-70b-versatile",
-        "llama-3.1-8b": "llama-3.1-8b-instant",
-        "llama-3.2-3b": "llama-3.2-3b-preview",
-        "llama-3.2-1b": "llama-3.2-1b-preview",
-        "gemma-2-9b": "gemma2-9b-it",
-        "gemma-2-27b": "gemma2-27b-it",
-        "qwen-2.5-32b": "qwen-qwq-32b",
-        "mistral-small-24b": "mistral-saba-24b",
-        "deepseek-r1": "deepseek-r1-distill-llama-70b",
-      },
-      cerebras: {
-        "llama-3.3-70b": "llama-3.3-70b",
-        "llama-3.1-70b": "llama-3.1-70b",
-        "llama-3.1-8b": "llama-3.1-8b",
-        "llama-3.2-3b": "llama-3.2-3b",
-        "llama-3.2-1b": "llama-3.2-1b",
-        "qwen-2.5-72b": "qwen-2.5-72b",
-        "qwen-2.5-32b": "qwen-2.5-32b",
-      },
-    };
-
-    return providerMappings[provider]?.[definition.id] ?? definition.id;
-  }
-
-  /**
-   * Get default rate limits for a provider/model combination
-   * These are based on typical free tier limits
-   */
-  private getDefaultLimits(
-    provider: ProviderType,
-    _modelId: string
-  ): RateLimits {
-    // Default limits by provider (based on free-llm-api-resources)
-    const providerLimits: Record<ProviderType, RateLimits> = {
-      groq: {
-        requestsPerMinute: 30,
-        requestsPerDay: 14400,
-        tokensPerMinute: 15000,
-        tokensPerDay: 500000,
-      },
-      cerebras: {
-        requestsPerMinute: 30,
-        requestsPerHour: 900,
-        tokensPerMinute: 60000,
-      },
-    };
-
-    return providerLimits[provider] ?? {};
-  }
-
-  /**
-   * Find models matching a query
-   */
-  findModels(query: ModelQuery): ModelRegistryEntry[] {
-    let results: ModelRegistryEntry[] = [];
-
-    // Handle generic aliases (e.g., "best-large")
-    if (query.modelName && isGenericAlias(query.modelName)) {
-      const aliasConfig = getGenericAliasConfig(query.modelName);
-      if (aliasConfig) {
-        // Update query with alias configuration
-        if (aliasConfig.tier) {
-          query = { ...query, tier: aliasConfig.tier, modelName: undefined };
-        } else if (aliasConfig.minTier) {
-          query = {
-            ...query,
-            minTier: aliasConfig.minTier,
-            modelName: undefined,
-          };
-        }
-      }
-    }
-
-    // Handle specific model name
-    if (query.modelName) {
-      const canonicalId = normalizeModelName(query.modelName);
-      results = this.entries.get(canonicalId) ?? [];
-    } else {
-      // Get all entries
-      results = Array.from(this.entries.values()).flat();
-    }
-
-    // Apply filters
-    if (query.provider) {
-      results = results.filter((e) => e.provider === query.provider);
-    }
-
-    if (query.tier !== undefined) {
-      results = results.filter((e) => e.qualityTier === query.tier);
-    }
-
-    if (query.minTier !== undefined) {
-      results = results.filter((e) => e.qualityTier >= query.minTier!);
-    }
-
-    if (query.family) {
-      const familyModels = MODEL_DEFINITIONS.filter(
-        (m) => m.family.toLowerCase() === query.family!.toLowerCase()
-      ).map((m) => m.id);
-      results = results.filter((e) => familyModels.includes(e.canonicalId));
-    }
-
-    // Sort by quality tier (highest first)
-    return results.sort((a, b) => compareTiers(b.qualityTier, a.qualityTier));
-  }
-
-  /**
-   * Find models that match a model name and are available from specified providers
-   */
-  findMatchingModels(
-    modelName: string,
-    providers: ProviderType[]
-  ): ModelRegistryEntry[] {
-    const entries = this.findModels({ modelName });
-    return entries.filter((e) => providers.includes(e.provider));
-  }
-
-  /**
-   * Get the best available model for a generic request
-   */
-  getBestModel(
-    minTier: ModelQualityTier = ModelQualityTier.TIER_1,
-    providers?: ProviderType[]
-  ): ModelRegistryEntry | null {
-    const tiersToCheck = getTiersAbove(minTier);
-
-    for (const tier of tiersToCheck) {
-      const models = this.findModels({ tier });
-      const filtered = providers
-        ? models.filter((m) => providers.includes(m.provider))
-        : models;
-
-      const first = filtered[0];
-      if (first) {
-        return first;
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * Get all models available from a provider
-   */
-  getProviderModels(provider: ProviderType): ModelRegistryEntry[] {
-    return this.providerModels.get(provider) ?? [];
-  }
-
-  /**
-   * Check if a model is supported by any provider
-   */
-  isModelSupported(modelName: string): boolean {
-    if (isGenericAlias(modelName)) {
-      return true;
-    }
-    const canonicalId = normalizeModelName(modelName);
-    return this.entries.has(canonicalId);
-  }
-
-  /**
-   * Get canonical model ID for an alias
-   */
-  getCanonicalId(modelName: string): string | null {
-    if (isGenericAlias(modelName)) {
-      return null; // Generic aliases don't have a single canonical ID
-    }
-    const canonical = this.aliasMap.get(modelName.toLowerCase());
-    return canonical ?? null;
-  }
-
-  /**
-   * Register a custom model
-   */
-  registerModel(
-    canonicalId: string,
-    providerModelId: string,
-    provider: ProviderType,
-    qualityTier: ModelQualityTier,
-    limits: RateLimits = {}
-  ): void {
-    const entry: ModelRegistryEntry = {
-      canonicalId,
-      providerModelId,
-      provider,
-      qualityTier,
-      limits,
-    };
-
-    // Index by canonical ID
-    const existing = this.entries.get(canonicalId) ?? [];
-    existing.push(entry);
-    this.entries.set(canonicalId, existing);
-
-    // Index by provider
-    const providerEntries = this.providerModels.get(provider) ?? [];
-    providerEntries.push(entry);
-    this.providerModels.set(provider, providerEntries);
-
-    // Add to alias map
-    this.aliasMap.set(canonicalId.toLowerCase(), canonicalId);
-  }
-
-  /**
-   * Convert a registry entry to a ModelConfig
-   */
-  toModelConfig(entry: ModelRegistryEntry): ModelConfig {
-    return {
-      id: entry.providerModelId,
-      aliases: [entry.canonicalId],
-      qualityTier: entry.qualityTier,
-      limits: entry.limits,
-    };
-  }
-
-  /**
-   * Get all supported canonical model IDs
-   */
-  getAllCanonicalIds(): string[] {
-    return Array.from(this.entries.keys());
-  }
-
-  /**
-   * Get all supported providers
-   */
-  getAllProviders(): ProviderType[] {
-    return Array.from(this.providerModels.keys());
-  }
-}
+  return {
+    entries: indexBy(entries, (e) => e.canonicalId),
+    aliasMap: buildAliasMap(),
+    providerModels: indexBy(entries, (e) => e.provider),
+  };
+};
 
 /**
- * Singleton instance of the model registry
+ * Register a custom model, returning new state
+ *
+ * @param state - Current registry state
+ * @param canonicalId - Canonical model ID
+ * @param providerModelId - Provider-specific model ID
+ * @param provider - Provider type
+ * @param qualityTier - Quality tier
+ * @param limits - Rate limits (optional)
+ * @returns New registry state with the model added
  */
-let registryInstance: ModelRegistry | null = null;
+export const registerModel = (
+  state: ModelRegistryState,
+  canonicalId: string,
+  providerModelId: string,
+  provider: ProviderType,
+  qualityTier: ModelQualityTier,
+  limits: RateLimits = {}
+): ModelRegistryState => {
+  const entry: ModelRegistryEntry = {
+    canonicalId,
+    providerModelId,
+    provider,
+    qualityTier,
+    limits,
+  };
+
+  // Build new entries map
+  const existingEntries = state.entries.get(canonicalId) ?? [];
+  const newEntriesMap = new Map(state.entries);
+  newEntriesMap.set(canonicalId, [...existingEntries, entry]);
+
+  // Build new provider models map
+  const existingProviderEntries = state.providerModels.get(provider) ?? [];
+  const newProviderModelsMap = new Map(state.providerModels);
+  newProviderModelsMap.set(provider, [...existingProviderEntries, entry]);
+
+  // Build new alias map
+  const newAliasMap = new Map(state.aliasMap);
+  newAliasMap.set(canonicalId.toLowerCase(), canonicalId);
+
+  return {
+    entries: newEntriesMap,
+    aliasMap: newAliasMap,
+    providerModels: newProviderModelsMap,
+  };
+};
+
+// ============================================================================
+// Pure Query Functions
+// ============================================================================
 
 /**
- * Get the global model registry instance
+ * Find models matching a query
  */
-export function getModelRegistry(): ModelRegistry {
-  if (!registryInstance) {
-    registryInstance = new ModelRegistry();
+export const findModels = (
+  state: ModelRegistryState,
+  query: ModelQuery
+): readonly ModelRegistryEntry[] => {
+  // Handle generic aliases (e.g., "best-large")
+  const resolvedQuery =
+    query.modelName && isGenericAlias(query.modelName)
+      ? resolveGenericAliasQuery(query)
+      : query;
+
+  // Get initial results
+  const initialResults = resolvedQuery.modelName
+    ? (state.entries.get(normalizeModelName(resolvedQuery.modelName)) ?? [])
+    : Array.from(state.entries.values()).flat();
+
+  // Apply filters and sort
+  return initialResults
+    .filter((e) => matchesQuery(e, resolvedQuery))
+    .sort((a, b) => compareTiers(b.qualityTier, a.qualityTier));
+};
+
+/**
+ * Resolve a generic alias query to a tier-based query
+ */
+const resolveGenericAliasQuery = (query: ModelQuery): ModelQuery => {
+  if (!query.modelName) return query;
+
+  const aliasConfig = getGenericAliasConfig(query.modelName);
+  if (!aliasConfig) return query;
+
+  if (aliasConfig.tier !== undefined) {
+    return { ...query, tier: aliasConfig.tier, modelName: undefined };
   }
-  return registryInstance;
-}
+  if (aliasConfig.minTier !== undefined) {
+    return { ...query, minTier: aliasConfig.minTier, modelName: undefined };
+  }
+  return query;
+};
+
+/**
+ * Check if an entry matches a query (excluding modelName, which is handled separately)
+ */
+const matchesQuery = (
+  entry: ModelRegistryEntry,
+  query: ModelQuery
+): boolean => {
+  if (query.provider !== undefined && entry.provider !== query.provider) {
+    return false;
+  }
+  if (query.tier !== undefined && entry.qualityTier !== query.tier) {
+    return false;
+  }
+  if (query.minTier !== undefined && entry.qualityTier < query.minTier) {
+    return false;
+  }
+  if (query.family !== undefined) {
+    const familyModels = MODEL_DEFINITIONS.filter(
+      (m) => m.family.toLowerCase() === query.family!.toLowerCase()
+    ).map((m) => m.id);
+    if (!familyModels.includes(entry.canonicalId)) {
+      return false;
+    }
+  }
+  return true;
+};
+
+/**
+ * Find models that match a model name and are available from specified providers
+ */
+export const findMatchingModels = (
+  state: ModelRegistryState,
+  modelName: string,
+  providers: readonly ProviderType[]
+): readonly ModelRegistryEntry[] =>
+  findModels(state, { modelName }).filter((e) => providers.includes(e.provider));
+
+/**
+ * Get the best available model for a generic request
+ */
+export const getBestModel = (
+  state: ModelRegistryState,
+  minTier: ModelQualityTier = ModelQualityTier.TIER_1,
+  providers?: readonly ProviderType[]
+): ModelRegistryEntry | null => {
+  const tiersToCheck = getTiersAbove(minTier);
+
+  for (const tier of tiersToCheck) {
+    const models = findModels(state, { tier });
+    const filtered = providers
+      ? models.filter((m) => providers.includes(m.provider))
+      : models;
+
+    const first = filtered[0];
+    if (first) {
+      return first;
+    }
+  }
+
+  return null;
+};
+
+/**
+ * Get all models available from a provider
+ */
+export const getProviderModels = (
+  state: ModelRegistryState,
+  provider: ProviderType
+): readonly ModelRegistryEntry[] => state.providerModels.get(provider) ?? [];
+
+/**
+ * Check if a model is supported by any provider
+ */
+export const isModelSupported = (
+  state: ModelRegistryState,
+  modelName: string
+): boolean => {
+  if (isGenericAlias(modelName)) {
+    return true;
+  }
+  const canonicalId = normalizeModelName(modelName);
+  return state.entries.has(canonicalId);
+};
+
+/**
+ * Get canonical model ID for an alias
+ */
+export const getCanonicalId = (
+  state: ModelRegistryState,
+  modelName: string
+): string | null => {
+  if (isGenericAlias(modelName)) {
+    return null; // Generic aliases don't have a single canonical ID
+  }
+  return state.aliasMap.get(modelName.toLowerCase()) ?? null;
+};
+
+/**
+ * Convert a registry entry to a ModelConfig
+ */
+export const toModelConfig = (entry: ModelRegistryEntry): ModelConfig => ({
+  id: entry.providerModelId,
+  aliases: [entry.canonicalId],
+  qualityTier: entry.qualityTier,
+  limits: entry.limits,
+});
+
+/**
+ * Get all supported canonical model IDs
+ */
+export const getAllCanonicalIds = (
+  state: ModelRegistryState
+): readonly string[] => Array.from(state.entries.keys());
+
+/**
+ * Get all supported providers
+ */
+export const getAllProviders = (
+  state: ModelRegistryState
+): readonly ProviderType[] => Array.from(state.providerModels.keys());
+
+// ============================================================================
+// Singleton State Management
+// ============================================================================
+
+/**
+ * Cached registry state for singleton pattern
+ */
+let registryState: ModelRegistryState | null = null;
+
+/**
+ * Get the global model registry state
+ *
+ * For new code, prefer creating your own state with `createModelRegistry()`
+ * and passing it explicitly to functions.
+ */
+export const getModelRegistryState = (): ModelRegistryState => {
+  if (!registryState) {
+    registryState = createModelRegistry();
+  }
+  return registryState;
+};
 
 /**
  * Reset the global model registry (useful for testing)
  */
-export function resetModelRegistry(): void {
-  registryInstance = null;
-}
+export const resetModelRegistry = (): void => {
+  registryState = null;
+};

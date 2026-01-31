@@ -86,15 +86,21 @@ describe("LeastUsedStrategy", () => {
     expect(strategy.name).toBe("least-used");
   });
 
-  it("should return null when no candidates", () => {
-    const result = strategy.selectProvider([], createContext());
-    expect(result).toBeNull();
+  it("should return error when no candidates", () => {
+    const result = strategy.select([], createContext());
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      expect(result.error).toBe("no_candidates");
+    }
   });
 
   it("should return the only candidate when there is one", () => {
     const candidate = createMockCandidate({ providerName: "groq" });
-    const result = strategy.selectProvider([candidate], createContext());
-    expect(result).toBe(candidate);
+    const result = strategy.select([candidate], createContext());
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value).toBe(candidate);
+    }
   });
 
   it("should select the candidate with highest remaining quota", () => {
@@ -116,8 +122,11 @@ describe("LeastUsedStrategy", () => {
       }),
     ];
 
-    const result = strategy.selectProvider(candidates, createContext());
-    expect(result?.provider.name).toBe("cerebras");
+    const result = strategy.select(candidates, createContext());
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.provider.name).toBe("cerebras");
+    }
   });
 
   it("should use priority as tiebreaker when quotas are equal", () => {
@@ -134,8 +143,11 @@ describe("LeastUsedStrategy", () => {
       }),
     ];
 
-    const result = strategy.selectProvider(candidates, createContext());
-    expect(result?.provider.name).toBe("cerebras");
+    const result = strategy.select(candidates, createContext());
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.provider.name).toBe("cerebras");
+    }
   });
 
   it("should respect excluded providers", () => {
@@ -150,21 +162,27 @@ describe("LeastUsedStrategy", () => {
       }),
     ];
 
-    const result = strategy.selectProvider(candidates, createContext(["groq"]));
-    expect(result?.provider.name).toBe("cerebras");
+    const result = strategy.select(candidates, createContext(["groq"]));
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.provider.name).toBe("cerebras");
+    }
   });
 
-  it("should return null when all candidates are excluded", () => {
+  it("should return error when all candidates are excluded", () => {
     const candidates = [
       createMockCandidate({ providerName: "groq" }),
       createMockCandidate({ providerName: "cerebras" }),
     ];
 
-    const result = strategy.selectProvider(
+    const result = strategy.select(
       candidates,
       createContext(["groq", "cerebras"])
     );
-    expect(result).toBeNull();
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      expect(result.error).toBe("all_providers_excluded");
+    }
   });
 
   it("should consider all rate limit windows when calculating availability", () => {
@@ -187,9 +205,12 @@ describe("LeastUsedStrategy", () => {
       }),
     ];
 
-    const result = strategy.selectProvider(candidates, createContext());
-    // Cerebras has higher minimum availability (50% vs 20%)
-    expect(result?.provider.name).toBe("cerebras");
+    const result = strategy.select(candidates, createContext());
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      // Cerebras has higher minimum availability (50% vs 20%)
+      expect(result.value.provider.name).toBe("cerebras");
+    }
   });
 
   it("should stay within same quality tier", () => {
@@ -208,10 +229,13 @@ describe("LeastUsedStrategy", () => {
       }),
     ];
 
-    const result = strategy.selectProvider(candidates, createContext());
-    // Should pick groq (TIER_3) because candidates are pre-sorted by tier
-    // and we only compare within the same tier
-    expect(result?.provider.name).toBe("groq");
+    const result = strategy.select(candidates, createContext());
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      // Should pick groq (TIER_3) because candidates are pre-sorted by tier
+      // and we only compare within the same tier
+      expect(result.value.provider.name).toBe("groq");
+    }
   });
 
   it("should handle providers with no configured limits", () => {
@@ -239,9 +263,12 @@ describe("LeastUsedStrategy", () => {
       isFreeCredits: false,
     };
 
-    const result = strategy.selectProvider([candidate], createContext());
-    // Should still work and return the candidate (score = 1 when no limits)
-    expect(result).toBe(candidate);
+    const result = strategy.select([candidate], createContext());
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      // Should still work and return the candidate (score = 1 when no limits)
+      expect(result.value).toBe(candidate);
+    }
   });
 
   it("should prefer candidate with higher quota within same tier", () => {
@@ -263,7 +290,10 @@ describe("LeastUsedStrategy", () => {
       }),
     ];
 
-    const result = strategy.selectProvider(candidates, createContext());
-    expect(result?.provider.name).toBe("cerebras");
+    const result = strategy.select(candidates, createContext());
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.provider.name).toBe("cerebras");
+    }
   });
 });

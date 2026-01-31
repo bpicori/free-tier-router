@@ -52,6 +52,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "neverthrow": "^8.2.0",
     "openai": "^6.17.0"
   }
 }

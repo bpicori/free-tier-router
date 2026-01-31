@@ -1,63 +1,161 @@
 ---
-description: Enforce functional programming style - prefer functions over classes
+description: Enforce functional-first design with explicit state and side effects
 alwaysApply: true
 ---
 
 # Functional Programming Style
 
-This codebase follows a functional programming approach. Prefer pure functions and composition over class-based OOP patterns.
+This codebase follows a **functional-first architecture**.
 
-## Guidelines
+Prefer **pure functions, immutable data, and composition** over class-based OOP.
+Classes are allowed **only when required by external frameworks or libraries**
+(e.g. React components, ORMs, DI containers).
 
-- **Functions over classes**: Use standalone functions, not class methods
-- **Pure functions**: Minimize side effects, same input → same output
-- **Immutability**: Avoid mutating data; return new objects/arrays instead
-- **Composition**: Build complex behavior by composing simple functions
-- **Type aliases over class types**: Use TypeScript interfaces/types for data shapes
+---
+
+## Core Principles
+
+### 1. Functional Core, Imperative Shell
+- Keep **business logic pure**
+- Isolate side effects (I/O, database, network, time, randomness) at system boundaries
+
+---
+
+### 2. Functions Over Classes
+- Prefer standalone functions over classes and class methods
+- Avoid classes that encapsulate mutable state
+- Do not model domain logic as “services”, “managers”, or “controllers”
+
+---
+
+### 3. Explicit State and Dependencies
+- Pass state explicitly as function arguments
+- Return new state instead of mutating inputs
+- Inject dependencies via parameters, not constructors or globals
+
+---
+
+### 4. Immutability by Default
+- Do not mutate objects, arrays, or function arguments
+- Use object/array spreading or functional helpers to create new values
+
+---
+
+### 5. Composition Over Control Flow
+- Build behavior by composing small, focused functions
+- Prefer `map`, `filter`, `reduce`, and pipelines over loops and deeply nested conditionals
+
+---
+
+### 6. Types Describe Data, Not Behavior
+- Use `type` aliases or `interface`s for data shapes
+- Avoid class-based models for domain entities
+- Prefer union types over booleans or nullable values
+
+---
 
 ## Examples
 
-```typescript
-// ❌ BAD - Class-based approach
+### ❌ Avoid Class-Based Services
+```ts
 class UserService {
   constructor(private db: Database) {}
-  
+
   async getUser(id: string) {
-    return this.db.query('SELECT * FROM users WHERE id = ?', [id]);
+    return this.db.query(
+      'SELECT * FROM users WHERE id = ?',
+      [id]
+    );
   }
 }
+````
 
-// ✅ GOOD - Functional approach
-const getUser = async (db: Database, id: string): Promise<User | null> => {
-  return db.query('SELECT * FROM users WHERE id = ?', [id]);
-};
+### ✅ Prefer Functional Dependency Injection
+
+```ts
+const getUser = async (
+  db: Database,
+  id: string
+): Promise<User | null> =>
+  db.query('SELECT * FROM users WHERE id = ?', [id]);
 ```
 
-```typescript
-// ❌ BAD - Mutation
+---
+
+### ❌ Avoid Mutation
+
+```ts
 function addItem(cart: Cart, item: Item) {
   cart.items.push(item);
   return cart;
 }
+```
 
-// ✅ GOOD - Immutable
+### ✅ Return New Data
+
+```ts
 const addItem = (cart: Cart, item: Item): Cart => ({
   ...cart,
   items: [...cart.items, item],
 });
 ```
 
-```typescript
-// ❌ BAD - Class with state
+---
+
+### ❌ Avoid Hidden Internal State
+
+```ts
 class Counter {
   private count = 0;
   increment() { this.count++; }
-  getCount() { return this.count; }
 }
+```
 
-// ✅ GOOD - Pure functions with explicit state
+### ✅ Make State Explicit
+
+```ts
 type CounterState = { count: number };
+
 const increment = (state: CounterState): CounterState => ({
   count: state.count + 1,
 });
 ```
+
+---
+
+### ❌ Avoid Nullable Results
+
+```ts
+function findUser(id: string): User | null {
+  return db[id] ?? null;
+}
+```
+
+### ✅ Prefer Explicit Result Types
+
+```ts
+type Result<T> =
+  | { ok: true; value: T }
+  | { ok: false; error: string };
+
+const findUser = (id: string): Result<User> =>
+  db[id]
+    ? { ok: true, value: db[id] }
+    : { ok: false, error: 'User not found' };
+```
+
+---
+
+## Allowed Exceptions
+
+Classes are acceptable when:
+
+* Required by framework APIs (e.g. React components, NestJS controllers)
+* Interfacing with third-party libraries that enforce class usage
+* Encapsulating **pure data only** (no mutable state, no behavior)
+
+When classes are unavoidable:
+
+* Keep them thin
+* Do not embed business logic
+* Delegate logic to pure functions

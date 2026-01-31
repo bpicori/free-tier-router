@@ -56,7 +56,13 @@ export {
 } from "./errors.js";
 
 // Strategy types
-export { type RoutingContext, type RoutingStrategy } from "./strategy.js";
+export {
+  type RoutingContext,
+  type RoutingStrategy,
+  type SelectProviderFn,
+  type SelectionError,
+  type StrategyName,
+} from "./strategy.js";
 
 // State store types
 export {
@@ -65,3 +71,6 @@ export {
   type LatencyRecord,
   type StateStore,
 } from "./state.js";
+
+// Re-export Result type from neverthrow for convenience
+export { type Result, ok, err } from "neverthrow";

@@ -96,14 +96,14 @@ export const executeWithRetry = async <T>(
     };
 
     // Select provider
-    const selected = await selectProvider(params.model, context, selection);
+    const selectionResult = await selectProvider(params.model, context, selection);
 
-    if (!selected) {
+    if (selectionResult.isErr()) {
       // No more providers available
       break;
     }
 
-    const { provider, model } = selected;
+    const { provider, model } = selectionResult.value;
     const startTime = Date.now();
 
     try {

@@ -1,6 +1,21 @@
-import type { RoutingStrategy, RoutingContext } from "../types/strategy.js";
+import type {
+  RoutingStrategy,
+  RoutingContext,
+  SelectionError,
+} from "../types/strategy.js";
 import type { ProviderModelCandidate } from "../types/provider.js";
-import type { QuotaStatus } from "../types/models.js";
+import type { QuotaStatus, RateLimits } from "../types/models.js";
+import { ok, err, type Result } from "neverthrow";
+
+/**
+ * Calculate percentage remaining for a single limit window
+ * Returns null if limit or remaining is not defined
+ */
+const calculatePercentage = (
+  remaining: number | null,
+  limit: number | undefined
+): number | null =>
+  limit !== undefined && remaining !== null ? remaining / limit : null;
 
 /**
  * Calculate a normalized "availability score" from quota status
@@ -14,61 +29,77 @@ import type { QuotaStatus } from "../types/models.js";
  */
 const calculateAvailabilityScore = (
   quota: QuotaStatus,
-  limits: {
-    requestsPerMinute?: number;
-    requestsPerHour?: number;
-    requestsPerDay?: number;
-    tokensPerMinute?: number;
-    tokensPerHour?: number;
-    tokensPerDay?: number;
-  }
+  limits: RateLimits
 ): number => {
-  const percentages: number[] = [];
+  const { requestsRemaining, tokensRemaining } = quota;
 
-  // Calculate request percentages for each window
-  if (
-    limits.requestsPerMinute !== undefined &&
-    quota.requestsRemaining.minute !== null
-  ) {
-    percentages.push(quota.requestsRemaining.minute / limits.requestsPerMinute);
-  }
-  if (
-    limits.requestsPerHour !== undefined &&
-    quota.requestsRemaining.hour !== null
-  ) {
-    percentages.push(quota.requestsRemaining.hour / limits.requestsPerHour);
-  }
-  if (
-    limits.requestsPerDay !== undefined &&
-    quota.requestsRemaining.day !== null
-  ) {
-    percentages.push(quota.requestsRemaining.day / limits.requestsPerDay);
-  }
-
-  // Calculate token percentages for each window
-  if (
-    limits.tokensPerMinute !== undefined &&
-    quota.tokensRemaining.minute !== null
-  ) {
-    percentages.push(quota.tokensRemaining.minute / limits.tokensPerMinute);
-  }
-  if (
-    limits.tokensPerHour !== undefined &&
-    quota.tokensRemaining.hour !== null
-  ) {
-    percentages.push(quota.tokensRemaining.hour / limits.tokensPerHour);
-  }
-  if (limits.tokensPerDay !== undefined && quota.tokensRemaining.day !== null) {
-    percentages.push(quota.tokensRemaining.day / limits.tokensPerDay);
-  }
+  const percentages = [
+    calculatePercentage(requestsRemaining.minute, limits.requestsPerMinute),
+    calculatePercentage(requestsRemaining.hour, limits.requestsPerHour),
+    calculatePercentage(requestsRemaining.day, limits.requestsPerDay),
+    calculatePercentage(tokensRemaining.minute, limits.tokensPerMinute),
+    calculatePercentage(tokensRemaining.hour, limits.tokensPerHour),
+    calculatePercentage(tokensRemaining.day, limits.tokensPerDay),
+  ].filter((p): p is number => p !== null);
 
   // If no limits are configured, treat as fully available
-  if (percentages.length === 0) {
-    return 1;
+  return percentages.length === 0 ? 1 : Math.min(...percentages);
+};
+
+/**
+ * Select provider using least-used strategy
+ *
+ * Pure function that implements the least-used selection logic:
+ * 1. Filter out excluded providers
+ * 2. Among remaining candidates in the best tier, select by availability score
+ */
+const selectByLeastUsed = (
+  candidates: readonly ProviderModelCandidate[],
+  context: RoutingContext
+): Result<ProviderModelCandidate, SelectionError> => {
+  // Filter out excluded providers
+  const available = candidates.filter(
+    (c) => !context.excludedProviders.has(c.provider.name)
+  );
+
+  if (available.length === 0) {
+    return err(
+      candidates.length === 0 ? "no_candidates" : "all_providers_excluded"
+    );
   }
 
-  // Return the minimum percentage (most constrained limit)
-  return Math.min(...percentages);
+  // Candidates are already sorted by quality tier (highest first)
+  // Within the same tier, we want to pick the one with highest availability
+  const firstCandidate = available[0];
+  if (!firstCandidate) {
+    return err("no_available_provider");
+  }
+
+  const bestTier = firstCandidate.model.qualityTier;
+
+  const sameTierCandidates = available.filter(
+    (c) => c.model.qualityTier === bestTier
+  );
+
+  // Calculate availability scores and sort by highest
+  const withScores = sameTierCandidates.map((candidate) => ({
+    candidate,
+    score: calculateAvailabilityScore(candidate.quota, candidate.model.limits),
+  }));
+
+  // Sort by score descending (highest availability first)
+  // On tie, use priority as tiebreaker
+  const sorted = [...withScores].sort((a, b) => {
+    const scoreDiff = b.score - a.score;
+    if (Math.abs(scoreDiff) > 0.001) {
+      return scoreDiff;
+    }
+    // Tiebreaker: lower priority number = higher priority
+    return a.candidate.priority - b.candidate.priority;
+  });
+
+  const selected = sorted[0]?.candidate;
+  return selected ? ok(selected) : err("no_available_provider");
 };
 
 /**
@@ -88,57 +119,7 @@ const calculateAvailabilityScore = (
  * // → Routes to Groq (highest remaining)
  * ```
  */
-export const createLeastUsedStrategy = (): RoutingStrategy => {
-  return {
-    name: "least-used",
-
-    selectProvider(
-      candidates: ProviderModelCandidate[],
-      context: RoutingContext
-    ): ProviderModelCandidate | null {
-      // Filter out excluded providers
-      const available = candidates.filter(
-        (c) => !context.excludedProviders.has(c.provider.name)
-      );
-
-      if (available.length === 0) {
-        return null;
-      }
-
-      // Candidates are already sorted by quality tier (highest first)
-      // Within the same tier, we want to pick the one with highest availability
-      const firstCandidate = available[0];
-      if (!firstCandidate) {
-        return null;
-      }
-
-      const bestTier = firstCandidate.model.qualityTier;
-
-      const sameTierCandidates = available.filter(
-        (c) => c.model.qualityTier === bestTier
-      );
-
-      // Calculate availability scores and sort by highest
-      const withScores = sameTierCandidates.map((candidate) => ({
-        candidate,
-        score: calculateAvailabilityScore(
-          candidate.quota,
-          candidate.model.limits
-        ),
-      }));
-
-      // Sort by score descending (highest availability first)
-      // On tie, use priority as tiebreaker
-      withScores.sort((a, b) => {
-        const scoreDiff = b.score - a.score;
-        if (Math.abs(scoreDiff) > 0.001) {
-          return scoreDiff;
-        }
-        // Tiebreaker: lower priority number = higher priority
-        return a.candidate.priority - b.candidate.priority;
-      });
-
-      return withScores[0]?.candidate ?? null;
-    },
-  };
-};
+export const createLeastUsedStrategy = (): RoutingStrategy => ({
+  name: "least-used",
+  select: selectByLeastUsed,
+});

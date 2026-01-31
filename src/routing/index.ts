@@ -14,6 +14,7 @@ export type {
 } from "./types.js";
 
 // Provider selection
+export type { ProviderSelectionError } from "./provider-selection.js";
 export {
   resolveModelName,
   findProvidersForModel,

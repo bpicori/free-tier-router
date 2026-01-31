@@ -80,15 +80,21 @@ describe("PriorityStrategy", () => {
     expect(strategy.name).toBe("priority");
   });
 
-  it("should return null when no candidates", () => {
-    const result = strategy.selectProvider([], createContext());
-    expect(result).toBeNull();
+  it("should return error when no candidates", () => {
+    const result = strategy.select([], createContext());
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      expect(result.error).toBe("no_candidates");
+    }
   });
 
   it("should return the only candidate when there is one", () => {
     const candidate = createMockCandidate({ providerName: "groq" });
-    const result = strategy.selectProvider([candidate], createContext());
-    expect(result).toBe(candidate);
+    const result = strategy.select([candidate], createContext());
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value).toBe(candidate);
+    }
   });
 
   it("should select the highest priority candidate (lowest priority number)", () => {
@@ -98,8 +104,11 @@ describe("PriorityStrategy", () => {
       createMockCandidate({ providerName: "openrouter", priority: 3 }),
     ];
 
-    const result = strategy.selectProvider(candidates, createContext());
-    expect(result?.provider.name).toBe("cerebras");
+    const result = strategy.select(candidates, createContext());
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.provider.name).toBe("cerebras");
+    }
   });
 
   it("should respect excluded providers", () => {
@@ -108,21 +117,27 @@ describe("PriorityStrategy", () => {
       createMockCandidate({ providerName: "cerebras", priority: 2 }),
     ];
 
-    const result = strategy.selectProvider(candidates, createContext(["groq"]));
-    expect(result?.provider.name).toBe("cerebras");
+    const result = strategy.select(candidates, createContext(["groq"]));
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.provider.name).toBe("cerebras");
+    }
   });
 
-  it("should return null when all candidates are excluded", () => {
+  it("should return error when all candidates are excluded", () => {
     const candidates = [
       createMockCandidate({ providerName: "groq", priority: 1 }),
       createMockCandidate({ providerName: "cerebras", priority: 2 }),
     ];
 
-    const result = strategy.selectProvider(
+    const result = strategy.select(
       candidates,
       createContext(["groq", "cerebras"])
     );
-    expect(result).toBeNull();
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      expect(result.error).toBe("all_providers_excluded");
+    }
   });
 
   it("should prefer higher quality tier even with lower priority", () => {
@@ -140,9 +155,12 @@ describe("PriorityStrategy", () => {
       }),
     ];
 
-    const result = strategy.selectProvider(candidates, createContext());
-    // Should pick groq because it's TIER_3 (highest), even though priority is 3
-    expect(result?.provider.name).toBe("groq");
+    const result = strategy.select(candidates, createContext());
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      // Should pick groq because it's TIER_3 (highest), even though priority is 3
+      expect(result.value.provider.name).toBe("groq");
+    }
   });
 
   it("should use priority as tiebreaker within same quality tier", () => {
@@ -164,8 +182,11 @@ describe("PriorityStrategy", () => {
       }),
     ];
 
-    const result = strategy.selectProvider(candidates, createContext());
-    // Within TIER_3, should pick cerebras (priority 1)
-    expect(result?.provider.name).toBe("cerebras");
+    const result = strategy.select(candidates, createContext());
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      // Within TIER_3, should pick cerebras (priority 1)
+      expect(result.value.provider.name).toBe("cerebras");
+    }
   });
 });

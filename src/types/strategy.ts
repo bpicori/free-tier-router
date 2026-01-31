@@ -1,35 +1,58 @@
 import type { ChatCompletionRequest } from "./openai.js";
 import type { ProviderModelCandidate } from "./provider.js";
+import type { Result } from "neverthrow";
 
 /**
  * Context provided to routing strategies
  */
 export interface RoutingContext {
   /** The original request */
-  request: ChatCompletionRequest;
+  readonly request: ChatCompletionRequest;
   /** Providers that have already been tried and failed */
-  excludedProviders: Set<string>;
+  readonly excludedProviders: ReadonlySet<string>;
   /** Number of retry attempts so far */
-  retryCount: number;
+  readonly retryCount: number;
 }
 
 /**
- * Interface for routing strategies
- * Strategies determine which provider/model to use for a request
+ * Errors that can occur during provider selection
  */
-export interface RoutingStrategy {
-  /** Strategy identifier */
-  readonly name: string;
+export type SelectionError =
+  | "no_candidates"
+  | "no_available_provider"
+  | "all_providers_excluded";
 
+/**
+ * Type for the strategy selection function
+ */
+export type SelectProviderFn = (
+  candidates: readonly ProviderModelCandidate[],
+  context: RoutingContext
+) => Result<ProviderModelCandidate, SelectionError>;
+
+/**
+ * Strategy name type
+ */
+export type StrategyName = "priority" | "least-used" | "round-robin";
+
+/**
+ * Routing strategy definition
+ *
+ * Strategies determine which provider/model to use for a request.
+ * Each strategy implements a selection function that takes candidates
+ * and context, returning a Result with either the selected candidate
+ * or an error.
+ */
+export type RoutingStrategy = Readonly<{
+  /** Strategy identifier */
+  name: StrategyName;
   /**
    * Select the best provider/model candidate for a request
    *
    * @param candidates - Available provider/model combinations, already sorted by quality tier
    * @param context - Routing context with request info and exclusions
-   * @returns The selected candidate, or null if no suitable candidate
+   * @returns Result with the selected candidate or an error
    */
-  selectProvider(
-    candidates: ProviderModelCandidate[],
-    context: RoutingContext
-  ): ProviderModelCandidate | null;
-}
+  select: SelectProviderFn;
+}>;
+

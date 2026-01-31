@@ -7,7 +7,8 @@
 
 import type { ProviderModelCandidate } from "../types/provider.js";
 import { providerSupportsModel, getProviderModelId } from "../types/provider.js";
-import type { RoutingContext } from "../types/strategy.js";
+import type { RoutingContext, SelectionError } from "../types/strategy.js";
+import { ok, err, type Result } from "neverthrow";
 import {
   isGenericAlias,
   getGenericAliasConfig,
@@ -48,23 +49,35 @@ export const resolveModelName = (
 export const findProvidersForModel = (
   modelId: string,
   providers: ConfiguredProvider[]
-): ProviderMatch[] => {
-  return providers.reduce<ProviderMatch[]>((acc, configuredProvider) => {
-    const { definition } = configuredProvider;
-
-    if (providerSupportsModel(definition, modelId)) {
+): ProviderMatch[] =>
+  providers
+    .filter(({ definition }) => providerSupportsModel(definition, modelId))
+    .flatMap((configuredProvider) => {
+      const { definition } = configuredProvider;
       const providerModelId = getProviderModelId(definition, modelId);
       const modelConfig = definition.models.find(
         (m) => m.id === providerModelId
       );
 
-      if (modelConfig) {
-        acc.push({ provider: configuredProvider, model: modelConfig });
-      }
-    }
+      return modelConfig
+        ? [{ provider: configuredProvider, model: modelConfig }]
+        : [];
+    });
 
-    return acc;
-  }, []);
+/**
+ * Check if a model matches the alias configuration
+ */
+const matchesAliasConfig = (
+  modelConfig: { qualityTier: number },
+  aliasConfig: { tier?: number; minTier?: number }
+): boolean => {
+  if (aliasConfig.tier !== undefined) {
+    return modelConfig.qualityTier === aliasConfig.tier;
+  }
+  if (aliasConfig.minTier !== undefined) {
+    return modelConfig.qualityTier >= aliasConfig.minTier;
+  }
+  return false;
 };
 
 /**
@@ -83,30 +96,50 @@ export const findProvidersForGenericAlias = (
     return [];
   }
 
-  const results: ProviderMatch[] = [];
+  return providers.flatMap((configuredProvider) =>
+    configuredProvider.definition.models
+      .filter((modelConfig) => matchesAliasConfig(modelConfig, aliasConfig))
+      .map((model) => ({ provider: configuredProvider, model }))
+  );
+};
 
-  for (const configuredProvider of providers) {
-    const { definition } = configuredProvider;
+/**
+ * Build a single candidate with quota information
+ * Returns null if the provider should be skipped
+ */
+const buildCandidate = async (
+  match: ProviderMatch,
+  excludedProviders: ReadonlySet<string>,
+  deps: Pick<SelectionDependencies, "tracker" | "stateStore">
+): Promise<ProviderModelCandidate | null> => {
+  const { tracker, stateStore } = deps;
+  const { provider: configuredProvider, model } = match;
+  const { definition, config: providerConfig } = configuredProvider;
 
-    for (const modelConfig of definition.models) {
-      let matches = false;
-
-      // Match by specific tier
-      if (aliasConfig.tier !== undefined) {
-        matches = modelConfig.qualityTier === aliasConfig.tier;
-      }
-      // Match by minimum tier
-      else if (aliasConfig.minTier !== undefined) {
-        matches = modelConfig.qualityTier >= aliasConfig.minTier;
-      }
-
-      if (matches) {
-        results.push({ provider: configuredProvider, model: modelConfig });
-      }
-    }
+  // Skip excluded providers
+  if (excludedProviders.has(definition.name)) {
+    return null;
   }
 
-  return results;
+  // Check if in cooldown
+  if (await tracker.isInCooldown(definition.name, model.id)) {
+    return null;
+  }
+
+  // Get quota status and latency in parallel
+  const [quota, latencyRecord] = await Promise.all([
+    tracker.getQuotaStatus(definition.name, model.id, model.limits),
+    stateStore.getLatency(definition.name, model.id),
+  ]);
+
+  return {
+    provider: definition,
+    model,
+    quota,
+    priority: providerConfig.priority,
+    latencyMs: latencyRecord?.averageMs,
+    isFreeCredits: providerConfig.isFreeCredits,
+  };
 };
 
 /**
@@ -119,51 +152,16 @@ export const findProvidersForGenericAlias = (
  */
 export const buildCandidates = async (
   matches: ProviderMatch[],
-  excludedProviders: Set<string>,
+  excludedProviders: ReadonlySet<string>,
   deps: Pick<SelectionDependencies, "tracker" | "stateStore">
 ): Promise<ProviderModelCandidate[]> => {
-  const { tracker, stateStore } = deps;
-  const candidates: ProviderModelCandidate[] = [];
-
-  await Promise.all(
-    matches.map(async ({ provider: configuredProvider, model }) => {
-      const { definition, config: providerConfig } = configuredProvider;
-
-      // Skip excluded providers
-      if (excludedProviders.has(definition.name)) {
-        return;
-      }
-
-      // Check if in cooldown
-      if (await tracker.isInCooldown(definition.name, model.id)) {
-        return;
-      }
-
-      // Get quota status
-      const quota = await tracker.getQuotaStatus(
-        definition.name,
-        model.id,
-        model.limits
-      );
-
-      // Get latency from state store
-      const latencyRecord = await stateStore.getLatency(
-        definition.name,
-        model.id
-      );
-
-      candidates.push({
-        provider: definition,
-        model,
-        quota,
-        priority: providerConfig.priority,
-        latencyMs: latencyRecord?.averageMs,
-        isFreeCredits: providerConfig.isFreeCredits,
-      });
-    })
+  const results = await Promise.all(
+    matches.map((match) => buildCandidate(match, excludedProviders, deps))
   );
 
-  return candidates;
+  return results.filter(
+    (candidate): candidate is ProviderModelCandidate => candidate !== null
+  );
 };
 
 /**
@@ -181,6 +179,15 @@ export const sortByQualityTier = (
 };
 
 /**
+ * Selection errors with more context
+ */
+export type ProviderSelectionError =
+  | { type: "no_matching_providers"; model: string }
+  | { type: "no_available_candidates"; model: string }
+  | { type: "strategy_error"; error: SelectionError }
+  | { type: "provider_not_found"; providerName: string };
+
+/**
  * Select a provider/model for a request
  *
  * This is the main selection function that orchestrates:
@@ -193,29 +200,25 @@ export const sortByQualityTier = (
  * @param model - The requested model name
  * @param context - Routing context with exclusions and retry count
  * @param deps - Selection dependencies
- * @returns Selected provider/model or null if none available
+ * @returns Result with selected provider/model or error
  */
 export const selectProvider = async (
   model: string,
   context: RoutingContext,
   deps: SelectionDependencies
-): Promise<ProviderMatch | null> => {
+): Promise<Result<ProviderMatch, ProviderSelectionError>> => {
   const { providers, tracker, stateStore, strategy, modelAliases } = deps;
 
   // Resolve model name
   const resolvedModel = resolveModelName(model, modelAliases);
 
   // Find matching providers
-  let matches: ProviderMatch[];
-
-  if (isGenericAlias(resolvedModel)) {
-    matches = findProvidersForGenericAlias(resolvedModel, providers);
-  } else {
-    matches = findProvidersForModel(resolvedModel, providers);
-  }
+  const matches = isGenericAlias(resolvedModel)
+    ? findProvidersForGenericAlias(resolvedModel, providers)
+    : findProvidersForModel(resolvedModel, providers);
 
   if (matches.length === 0) {
-    return null;
+    return err({ type: "no_matching_providers", model: resolvedModel });
   }
 
   // Build candidates with quota info
@@ -225,18 +228,20 @@ export const selectProvider = async (
   });
 
   if (candidates.length === 0) {
-    return null;
+    return err({ type: "no_available_candidates", model: resolvedModel });
   }
 
   // Sort by quality tier
   const sorted = sortByQualityTier(candidates);
 
   // Apply routing strategy
-  const selected = strategy.selectProvider(sorted, context);
+  const strategyResult = strategy.select(sorted, context);
 
-  if (!selected) {
-    return null;
+  if (strategyResult.isErr()) {
+    return err({ type: "strategy_error", error: strategyResult.error });
   }
+
+  const selected = strategyResult.value;
 
   // Find the ConfiguredProvider that matches the selected ProviderDefinition
   const configuredProvider = providers.find(
@@ -244,8 +249,8 @@ export const selectProvider = async (
   );
 
   if (!configuredProvider) {
-    return null;
+    return err({ type: "provider_not_found", providerName: selected.provider.name });
   }
 
-  return { provider: configuredProvider, model: selected.model };
+  return ok({ provider: configuredProvider, model: selected.model });
 };

@@ -1,5 +1,54 @@
-import type { RoutingStrategy, RoutingContext } from "../types/strategy.js";
+import type {
+  RoutingStrategy,
+  RoutingContext,
+  SelectionError,
+} from "../types/strategy.js";
 import type { ProviderModelCandidate } from "../types/provider.js";
+import { ok, err, type Result } from "neverthrow";
+
+/**
+ * Select provider using priority strategy
+ *
+ * Pure function that implements the priority selection logic:
+ * 1. Filter out excluded providers
+ * 2. Among remaining candidates in the best tier, select by priority
+ */
+const selectByPriority = (
+  candidates: readonly ProviderModelCandidate[],
+  context: RoutingContext
+): Result<ProviderModelCandidate, SelectionError> => {
+  // Filter out excluded providers
+  const available = candidates.filter(
+    (c) => !context.excludedProviders.has(c.provider.name)
+  );
+
+  if (available.length === 0) {
+    return err(
+      candidates.length === 0 ? "no_candidates" : "all_providers_excluded"
+    );
+  }
+
+  // Candidates are already sorted by quality tier (highest first)
+  // Within the same tier, we want to pick by priority (lowest number = highest priority)
+  const firstCandidate = available[0];
+  if (!firstCandidate) {
+    return err("no_available_provider");
+  }
+
+  const bestTier = firstCandidate.model.qualityTier;
+
+  const sameTierCandidates = available.filter(
+    (c) => c.model.qualityTier === bestTier
+  );
+
+  // Sort by priority (lower = higher priority)
+  const sorted = [...sameTierCandidates].sort(
+    (a, b) => a.priority - b.priority
+  );
+
+  const selected = sorted[0];
+  return selected ? ok(selected) : err("no_available_provider");
+};
 
 /**
  * Priority Fallback routing strategy
@@ -18,43 +67,7 @@ import type { ProviderModelCandidate } from "../types/provider.js";
  * // Will always try Groq first, then Cerebras, then OpenRouter
  * ```
  */
-export const createPriorityStrategy = (): RoutingStrategy => {
-  return {
-    name: "priority",
-
-    selectProvider(
-      candidates: ProviderModelCandidate[],
-      context: RoutingContext
-    ): ProviderModelCandidate | null {
-      // Filter out excluded providers
-      const available = candidates.filter(
-        (c) => !context.excludedProviders.has(c.provider.name)
-      );
-
-      if (available.length === 0) {
-        return null;
-      }
-
-      // Candidates are already sorted by quality tier (highest first)
-      // Within the same tier, we want to pick by priority (lowest number = highest priority)
-      // Group by quality tier and pick the highest priority within the best tier
-      const firstCandidate = available[0];
-      if (!firstCandidate) {
-        return null;
-      }
-
-      const bestTier = firstCandidate.model.qualityTier;
-
-      const sameTierCandidates = available.filter(
-        (c) => c.model.qualityTier === bestTier
-      );
-
-      // Sort by priority (lower = higher priority)
-      const sorted = [...sameTierCandidates].sort(
-        (a, b) => a.priority - b.priority
-      );
-
-      return sorted[0] ?? null;
-    },
-  };
-};
+export const createPriorityStrategy = (): RoutingStrategy => ({
+  name: "priority",
+  select: selectByPriority,
+});

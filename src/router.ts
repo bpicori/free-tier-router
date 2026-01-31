@@ -303,22 +303,18 @@ export const createRouter = (config: FreeTierRouterConfig): Router => {
   };
 
   /**
-   * List all available models
+   * List all available models (deduplicated by ID)
    */
   const listModels = (): ModelConfig[] => {
-    const models: ModelConfig[] = [];
+    const allModels = providers.flatMap(({ definition }) => definition.models);
+
+    // Deduplicate by model ID, keeping first occurrence
     const seen = new Set<string>();
-
-    for (const { definition } of providers) {
-      for (const model of definition.models) {
-        if (!seen.has(model.id)) {
-          seen.add(model.id);
-          models.push(model);
-        }
-      }
-    }
-
-    return models;
+    return allModels.filter((model) => {
+      if (seen.has(model.id)) return false;
+      seen.add(model.id);
+      return true;
+    });
   };
 
   /**
@@ -340,30 +336,26 @@ export const createRouter = (config: FreeTierRouterConfig): Router => {
   const getQuotaStatus = async (): Promise<
     Array<{ provider: ProviderType; model: string; quota: QuotaStatus }>
   > => {
-    const results: Array<{
-      provider: ProviderType;
-      model: string;
-      quota: QuotaStatus;
-    }> = [];
-
-    await Promise.all(
-      providers.map(async ({ definition }) => {
-        for (const model of definition.models) {
-          const quota = await tracker.getQuotaStatus(
-            definition.name,
-            model.id,
-            model.limits
-          );
-          results.push({
-            provider: definition.name,
-            model: model.id,
-            quota,
-          });
-        }
-      })
+    // Build all provider/model pairs
+    const pairs = providers.flatMap(({ definition }) =>
+      definition.models.map((model) => ({
+        definition,
+        model,
+      }))
     );
 
-    return results;
+    // Fetch quota status for all pairs in parallel
+    return Promise.all(
+      pairs.map(async ({ definition, model }) => ({
+        provider: definition.name,
+        model: model.id,
+        quota: await tracker.getQuotaStatus(
+          definition.name,
+          model.id,
+          model.limits
+        ),
+      }))
+    );
   };
 
   /**
@@ -431,30 +423,35 @@ const createStateStore = (config: FreeTierRouterConfig): StateStore => {
 };
 
 /**
+ * Try to create a single provider instance
+ * Returns null if creation fails (e.g., unknown provider type)
+ */
+const tryCreateProvider = (
+  providerConfig: ResolvedConfig["providers"][number],
+  timeoutMs: number
+): ConfiguredProvider | null => {
+  try {
+    const definition = getProvider(providerConfig.type);
+
+    // Create OpenAI client configured for this provider
+    const client = new OpenAI({
+      apiKey: providerConfig.apiKey,
+      baseURL: providerConfig.baseUrl ?? definition.baseUrl,
+      timeout: timeoutMs,
+    });
+
+    return { definition, config: providerConfig, client };
+  } catch {
+    // Skip unknown provider types
+    return null;
+  }
+};
+
+/**
  * Create provider instances from config
  */
-const createProviders = (config: ResolvedConfig): ConfiguredProvider[] => {
-  const providers: ConfiguredProvider[] = [];
-
-  for (const providerConfig of config.providers) {
-    if (!providerConfig.enabled) continue;
-
-    try {
-      const definition = getProvider(providerConfig.type);
-
-      // Create OpenAI client configured for this provider
-      const client = new OpenAI({
-        apiKey: providerConfig.apiKey,
-        baseURL: providerConfig.baseUrl ?? definition.baseUrl,
-        timeout: config.timeoutMs,
-      });
-
-      providers.push({ definition, config: providerConfig, client });
-    } catch {
-      // Skip unknown provider types
-      continue;
-    }
-  }
-
-  return providers;
-};
+const createProviders = (config: ResolvedConfig): ConfiguredProvider[] =>
+  config.providers
+    .filter((providerConfig) => providerConfig.enabled)
+    .map((providerConfig) => tryCreateProvider(providerConfig, config.timeoutMs))
+    .filter((provider): provider is ConfiguredProvider => provider !== null);

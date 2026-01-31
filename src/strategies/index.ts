@@ -1,5 +1,11 @@
 // Re-export strategy interface from types
-export type { RoutingStrategy, RoutingContext } from "../types/strategy.js";
+export type {
+  RoutingStrategy,
+  RoutingContext,
+  SelectProviderFn,
+  SelectionError,
+  StrategyName,
+} from "../types/strategy.js";
 
 // Strategy implementations
 export { createPriorityStrategy } from "./priority.js";

@@ -35,8 +35,22 @@ export {
 } from "./tiers.js";
 
 // Re-export registry functionality
+export type { ModelRegistryState } from "./registry.js";
 export {
-  ModelRegistry,
-  getModelRegistry,
+  // Factory function
+  createModelRegistry,
+  // Pure query functions
+  findModels,
+  findMatchingModels,
+  getBestModel,
+  getProviderModels,
+  isModelSupported,
+  getCanonicalId,
+  toModelConfig,
+  getAllCanonicalIds,
+  getAllProviders,
+  registerModel,
+  // Singleton accessors
+  getModelRegistryState,
   resetModelRegistry,
 } from "./registry.js";

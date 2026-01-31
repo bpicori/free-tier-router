@@ -1,0 +1,19 @@
+# Knowledge First
+
+Before starting any implementation or making changes to the codebase, always check the `knowledge/` folder for relevant documentation.
+
+## Guidelines
+
+1. **Search knowledge first**: When working on a feature or fixing a bug, look for related documentation in `knowledge/` before writing code
+2. **Understand existing patterns**: The knowledge folder contains architectural decisions and system explanations that should guide implementation
+3. **Keep knowledge updated**: When implementing new features or changing existing behavior, update the relevant knowledge files
+
+## Knowledge Files
+
+- `knowledge/model-aliases.md` - How the model alias system works (resolution flow, alias types, custom aliases)
+
+## When to Check
+
+- Before implementing model-related features → check `model-aliases.md`
+- Before adding new providers → understand how aliases map to provider models
+- Before modifying routing logic → understand the resolution flow

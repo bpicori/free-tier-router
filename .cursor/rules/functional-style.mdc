@@ -1,0 +1,63 @@
+---
+description: Enforce functional programming style - prefer functions over classes
+alwaysApply: true
+---
+
+# Functional Programming Style
+
+This codebase follows a functional programming approach. Prefer pure functions and composition over class-based OOP patterns.
+
+## Guidelines
+
+- **Functions over classes**: Use standalone functions, not class methods
+- **Pure functions**: Minimize side effects, same input → same output
+- **Immutability**: Avoid mutating data; return new objects/arrays instead
+- **Composition**: Build complex behavior by composing simple functions
+- **Type aliases over class types**: Use TypeScript interfaces/types for data shapes
+
+## Examples
+
+```typescript
+// ❌ BAD - Class-based approach
+class UserService {
+  constructor(private db: Database) {}
+  
+  async getUser(id: string) {
+    return this.db.query('SELECT * FROM users WHERE id = ?', [id]);
+  }
+}
+
+// ✅ GOOD - Functional approach
+const getUser = async (db: Database, id: string): Promise<User | null> => {
+  return db.query('SELECT * FROM users WHERE id = ?', [id]);
+};
+```
+
+```typescript
+// ❌ BAD - Mutation
+function addItem(cart: Cart, item: Item) {
+  cart.items.push(item);
+  return cart;
+}
+
+// ✅ GOOD - Immutable
+const addItem = (cart: Cart, item: Item): Cart => ({
+  ...cart,
+  items: [...cart.items, item],
+});
+```
+
+```typescript
+// ❌ BAD - Class with state
+class Counter {
+  private count = 0;
+  increment() { this.count++; }
+  getCount() { return this.count; }
+}
+
+// ✅ GOOD - Pure functions with explicit state
+type CounterState = { count: number };
+const increment = (state: CounterState): CounterState => ({
+  count: state.count + 1,
+});
+```

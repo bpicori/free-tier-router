@@ -13,7 +13,7 @@ import {
   isGenericAlias,
   getGenericAliasConfig,
   normalizeModelName,
-} from "../models/aliases.js";
+} from "../models/model-definitions.js";
 import type {
   ConfiguredProvider,
   SelectionDependencies,

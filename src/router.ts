@@ -32,7 +32,7 @@ import { createMemoryStore } from "./state/memory.js";
 import { createRateLimitTracker } from "./rate-limit/tracker.js";
 import { createStrategy } from "./strategies/index.js";
 import { getProvider } from "./providers/index.js";
-import { isGenericAlias } from "./models/aliases.js";
+import { isGenericAlias } from "./models/model-definitions.js";
 import type {
   ConfiguredProvider,
   SelectionDependencies,

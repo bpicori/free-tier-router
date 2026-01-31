@@ -1,168 +1,82 @@
+/**
+ * Cerebras Provider
+ *
+ * Provides Cerebras configuration loaded from config/providers/cerebras.yml
+ * API Docs: https://inference-docs.cerebras.ai/
+ */
+
 import type { ProviderDefinition } from "../types/provider.js";
 import type { ModelConfig } from "../types/models.js";
-import { ModelQualityTier } from "../types/models.js";
+import { getConfig } from "../config/index.js";
 
 /**
- * Cerebras provider configuration
- * API Docs: https://inference-docs.cerebras.ai/
- *
- * Cerebras offers extremely fast inference due to their custom silicon.
- * Free tier limits (approximate):
- * - 30 requests per minute
- * - 60,000 tokens per minute (varies by model)
- * - Rate limits are per model
+ * Build ProviderDefinition from loaded config
  */
+const buildCerebrasProvider = (): ProviderDefinition => {
+  const config = getConfig();
+  const providerConfig = config.providers.get("cerebras");
 
-/**
- * Cerebras model configurations with free tier rate limits
- *
- * Note: Cerebras specializes in fast inference with Llama and Qwen models
- */
-const CEREBRAS_MODELS: ModelConfig[] = [
-  // Tier 3 - Large Models
-  {
-    id: "llama-3.3-70b",
-    aliases: ["llama-3.3-70b-instruct", "llama-3.3-70b-versatile"],
-    qualityTier: ModelQualityTier.TIER_3,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerHour: 900,
-      requestsPerDay: 14400,
-      tokensPerMinute: 60000,
-      tokensPerDay: 1000000,
-    },
-  },
-  {
-    id: "llama-3.1-70b",
-    aliases: ["llama-3.1-70b-instruct", "llama-3.1-70b-versatile"],
-    qualityTier: ModelQualityTier.TIER_3,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerHour: 900,
-      requestsPerDay: 14400,
-      tokensPerMinute: 60000,
-      tokensPerDay: 1000000,
-    },
-  },
-  {
-    id: "qwen-2.5-72b",
-    aliases: ["qwen-2.5-72b-instruct"],
-    qualityTier: ModelQualityTier.TIER_3,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerHour: 900,
-      requestsPerDay: 14400,
-      tokensPerMinute: 60000,
-      tokensPerDay: 1000000,
-    },
-  },
+  if (!providerConfig) {
+    throw new Error("Cerebras provider config not found. Check config/providers/cerebras.yml");
+  }
 
-  // Tier 2 - Medium Models
-  {
-    id: "qwen-2.5-32b",
-    aliases: ["qwen-2.5-32b-instruct"],
-    qualityTier: ModelQualityTier.TIER_2,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerHour: 900,
-      requestsPerDay: 14400,
-      tokensPerMinute: 60000,
-      tokensPerDay: 1000000,
-    },
-  },
+  // Get model tier info from models config
+  const modelTiers = new Map(
+    config.models.models.map((m) => [m.id, m.tier])
+  );
 
-  // Tier 1 - Small Models
-  {
-    id: "llama-3.2-3b",
-    aliases: ["llama-3.2-3b-instruct", "llama-3.2-3b-preview"],
-    qualityTier: ModelQualityTier.TIER_1,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerHour: 900,
-      requestsPerDay: 14400,
-      tokensPerMinute: 60000,
-      tokensPerDay: 1000000,
-    },
-  },
-  {
-    id: "llama-3.2-1b",
-    aliases: ["llama-3.2-1b-instruct", "llama-3.2-1b-preview"],
-    qualityTier: ModelQualityTier.TIER_1,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerHour: 900,
-      requestsPerDay: 14400,
-      tokensPerMinute: 60000,
-      tokensPerDay: 1000000,
-    },
-  },
-  {
-    id: "llama-3.1-8b",
-    aliases: ["llama-3.1-8b-instruct", "llama-3.1-8b-instant"],
-    qualityTier: ModelQualityTier.TIER_1,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerHour: 900,
-      requestsPerDay: 14400,
-      tokensPerMinute: 60000,
-      tokensPerDay: 1000000,
-    },
-  },
-];
+  // Build ModelConfig array
+  const models: ModelConfig[] = providerConfig.models.map((pm) => ({
+    id: pm.id,
+    aliases: [pm.canonical],
+    qualityTier: modelTiers.get(pm.canonical) ?? 1,
+    limits: pm.limits,
+  }));
 
-/**
- * Map canonical model IDs to Cerebras-specific model IDs
- * Cerebras uses clean model names without suffixes like "-versatile"
- */
-const CEREBRAS_MODEL_MAPPING: Record<string, string> = {
-  // Tier 3
-  "llama-3.3-70b": "llama-3.3-70b",
-  "llama-3.3-70b-versatile": "llama-3.3-70b",
-  "llama-3.3-70b-instruct": "llama-3.3-70b",
-  "llama-3.1-70b": "llama-3.1-70b",
-  "llama-3.1-70b-versatile": "llama-3.1-70b",
-  "llama-3.1-70b-instruct": "llama-3.1-70b",
-  "qwen-2.5-72b": "qwen-2.5-72b",
-  "qwen-2.5-72b-instruct": "qwen-2.5-72b",
+  // Build model mapping (canonical -> provider-specific)
+  const modelMapping: Record<string, string> = {};
+  for (const pm of providerConfig.models) {
+    modelMapping[pm.canonical] = pm.id;
+    modelMapping[pm.id] = pm.id; // Also map provider ID to itself
+  }
 
-  // Tier 2
-  "qwen-2.5-32b": "qwen-2.5-32b",
-  "qwen-2.5-32b-instruct": "qwen-2.5-32b",
-
-  // Tier 1
-  "llama-3.2-3b": "llama-3.2-3b",
-  "llama-3.2-3b-preview": "llama-3.2-3b",
-  "llama-3.2-3b-instruct": "llama-3.2-3b",
-  "llama-3.2-1b": "llama-3.2-1b",
-  "llama-3.2-1b-preview": "llama-3.2-1b",
-  "llama-3.2-1b-instruct": "llama-3.2-1b",
-  "llama-3.1-8b": "llama-3.1-8b",
-  "llama-3.1-8b-instant": "llama-3.1-8b",
-  "llama-3.1-8b-instruct": "llama-3.1-8b",
+  return {
+    name: "cerebras",
+    displayName: providerConfig.displayName,
+    baseUrl: providerConfig.baseUrl,
+    models,
+    modelMapping,
+  };
 };
+
+/** Cached provider definition */
+let cachedProvider: ProviderDefinition | null = null;
 
 /**
  * Cerebras provider definition
- *
- * Use with the OpenAI SDK:
- * ```typescript
- * import OpenAI from "openai";
- *
- * const client = new OpenAI({
- *   apiKey: process.env.CEREBRAS_API_KEY,
- *   baseURL: CEREBRAS_PROVIDER.baseUrl,
- * });
- * ```
  */
-export const CEREBRAS_PROVIDER: ProviderDefinition = {
-  name: "cerebras",
-  displayName: "Cerebras",
-  baseUrl: "https://api.cerebras.ai/v1",
-  models: CEREBRAS_MODELS,
-  modelMapping: CEREBRAS_MODEL_MAPPING,
-};
+export const CEREBRAS_PROVIDER: ProviderDefinition = new Proxy({} as ProviderDefinition, {
+  get(_, prop) {
+    if (!cachedProvider) {
+      cachedProvider = buildCerebrasProvider();
+    }
+    return cachedProvider[prop as keyof ProviderDefinition];
+  },
+});
 
 /**
  * Get all Cerebras model configurations
  */
-export const getCerebrasModels = (): readonly ModelConfig[] => CEREBRAS_MODELS;
+export const getCerebrasModels = (): readonly ModelConfig[] => {
+  if (!cachedProvider) {
+    cachedProvider = buildCerebrasProvider();
+  }
+  return cachedProvider.models;
+};
+
+/**
+ * Reset cached provider (for testing)
+ */
+export const resetCerebrasProvider = (): void => {
+  cachedProvider = null;
+};

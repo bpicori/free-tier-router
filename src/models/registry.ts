@@ -1,14 +1,23 @@
-import { ModelQualityTier } from "../types/models.js";
-import type { ModelConfig, RateLimits } from "../types/models.js";
+/**
+ * Model Registry
+ *
+ * Provides model lookup and query functionality based on loaded configuration.
+ * Builds registry entries from config/models.yml and config/providers/*.yml.
+ */
+
+import type { RateLimits } from "../types/models.js";
 import type { ProviderType } from "../types/provider.js";
 import {
-  MODEL_DEFINITIONS,
+  getConfig,
+  type ProviderConfig,
   type ModelDefinition,
+} from "../config/index.js";
+import {
   normalizeModelName,
   isGenericAlias,
   getGenericAliasConfig,
   buildAliasMap,
-} from "./aliases.js";
+} from "./model-definitions.js";
 import { getTiersAbove, compareTiers } from "./tiers.js";
 
 /**
@@ -22,7 +31,7 @@ export interface ModelRegistryEntry {
   /** Provider that offers this model */
   readonly provider: ProviderType;
   /** Quality tier */
-  readonly qualityTier: ModelQualityTier;
+  readonly qualityTier: number;
   /** Rate limits (provider-specific) */
   readonly limits: RateLimits;
 }
@@ -34,9 +43,9 @@ export interface ModelQuery {
   /** Specific model name or generic alias */
   readonly modelName?: string;
   /** Minimum quality tier */
-  readonly minTier?: ModelQualityTier;
+  readonly minTier?: number;
   /** Exact quality tier */
-  readonly tier?: ModelQualityTier;
+  readonly tier?: number;
   /** Filter by provider */
   readonly provider?: ProviderType;
   /** Filter by model family */
@@ -60,87 +69,47 @@ export type ModelRegistryState = Readonly<{
 // ============================================================================
 
 /**
- * Provider-specific model ID mappings
- * Different providers may use different names for the same model
- */
-const PROVIDER_MODEL_MAPPINGS: Readonly<
-  Record<ProviderType, Readonly<Record<string, string>>>
-> = {
-  groq: {
-    "llama-3.3-70b": "llama-3.3-70b-versatile",
-    "llama-3.1-70b": "llama-3.1-70b-versatile",
-    "llama-3.1-8b": "llama-3.1-8b-instant",
-    "llama-3.2-3b": "llama-3.2-3b-preview",
-    "llama-3.2-1b": "llama-3.2-1b-preview",
-    "gemma-2-9b": "gemma2-9b-it",
-    "gemma-2-27b": "gemma2-27b-it",
-    "qwen-2.5-32b": "qwen-qwq-32b",
-    "mistral-small-24b": "mistral-saba-24b",
-    "deepseek-r1": "deepseek-r1-distill-llama-70b",
-  },
-  cerebras: {
-    "llama-3.3-70b": "llama-3.3-70b",
-    "llama-3.1-70b": "llama-3.1-70b",
-    "llama-3.1-8b": "llama-3.1-8b",
-    "llama-3.2-3b": "llama-3.2-3b",
-    "llama-3.2-1b": "llama-3.2-1b",
-    "qwen-2.5-72b": "qwen-2.5-72b",
-    "qwen-2.5-32b": "qwen-2.5-32b",
-  },
-};
-
-/**
- * Default rate limits by provider (based on free-llm-api-resources)
- */
-const PROVIDER_DEFAULT_LIMITS: Readonly<Record<ProviderType, RateLimits>> = {
-  groq: {
-    requestsPerMinute: 30,
-    requestsPerDay: 14400,
-    tokensPerMinute: 15000,
-    tokensPerDay: 500000,
-  },
-  cerebras: {
-    requestsPerMinute: 30,
-    requestsPerHour: 900,
-    tokensPerMinute: 60000,
-  },
-};
-
-/**
- * Get provider-specific model ID for a definition
- */
-const getProviderModelId = (
-  definition: ModelDefinition,
-  provider: ProviderType
-): string => PROVIDER_MODEL_MAPPINGS[provider]?.[definition.id] ?? definition.id;
-
-/**
- * Get default rate limits for a provider
- */
-const getDefaultLimits = (provider: ProviderType): RateLimits =>
-  PROVIDER_DEFAULT_LIMITS[provider] ?? {};
-
-/**
- * Build a single registry entry for a provider/model combination
+ * Build a single registry entry from config
  */
 const buildEntry = (
-  definition: ModelDefinition,
-  provider: ProviderType
+  modelDef: ModelDefinition,
+  providerConfig: ProviderConfig,
+  providerModelId: string,
+  limits: RateLimits
 ): ModelRegistryEntry => ({
-  canonicalId: definition.id,
-  providerModelId: getProviderModelId(definition, provider),
-  provider,
-  qualityTier: definition.qualityTier,
-  limits: getDefaultLimits(provider),
+  canonicalId: modelDef.id,
+  providerModelId,
+  provider: providerConfig.name as ProviderType,
+  qualityTier: modelDef.tier,
+  limits,
 });
 
 /**
- * Build all entries from model definitions
+ * Build all entries from loaded configuration
  */
-const buildEntriesFromDefinitions = (): readonly ModelRegistryEntry[] =>
-  MODEL_DEFINITIONS.flatMap((definition) =>
-    definition.providers.map((provider) => buildEntry(definition, provider))
-  );
+const buildEntriesFromConfig = (): readonly ModelRegistryEntry[] => {
+  const config = getConfig();
+  const modelMap = new Map(config.models.models.map((m) => [m.id, m]));
+  const entries: ModelRegistryEntry[] = [];
+
+  for (const providerConfig of config.providers.values()) {
+    for (const providerModel of providerConfig.models) {
+      const modelDef = modelMap.get(providerModel.canonical);
+      if (modelDef) {
+        entries.push(
+          buildEntry(
+            modelDef,
+            providerConfig,
+            providerModel.id,
+            providerModel.limits
+          )
+        );
+      }
+    }
+  }
+
+  return entries;
+};
 
 /**
  * Index entries by a key extractor function
@@ -165,13 +134,10 @@ const indexBy = <K>(
 // ============================================================================
 
 /**
- * Create a new model registry state from model definitions
- *
- * This is the primary way to create registry state. The returned state
- * is immutable and can be passed to pure query functions.
+ * Create a new model registry state from loaded configuration
  */
-export const createModelRegistry = (): ModelRegistryState => {
-  const entries = buildEntriesFromDefinitions();
+const createModelRegistry = (): ModelRegistryState => {
+  const entries = buildEntriesFromConfig();
 
   return {
     entries: indexBy(entries, (e) => e.canonicalId),
@@ -180,81 +146,9 @@ export const createModelRegistry = (): ModelRegistryState => {
   };
 };
 
-/**
- * Register a custom model, returning new state
- *
- * @param state - Current registry state
- * @param canonicalId - Canonical model ID
- * @param providerModelId - Provider-specific model ID
- * @param provider - Provider type
- * @param qualityTier - Quality tier
- * @param limits - Rate limits (optional)
- * @returns New registry state with the model added
- */
-export const registerModel = (
-  state: ModelRegistryState,
-  canonicalId: string,
-  providerModelId: string,
-  provider: ProviderType,
-  qualityTier: ModelQualityTier,
-  limits: RateLimits = {}
-): ModelRegistryState => {
-  const entry: ModelRegistryEntry = {
-    canonicalId,
-    providerModelId,
-    provider,
-    qualityTier,
-    limits,
-  };
-
-  // Build new entries map
-  const existingEntries = state.entries.get(canonicalId) ?? [];
-  const newEntriesMap = new Map(state.entries);
-  newEntriesMap.set(canonicalId, [...existingEntries, entry]);
-
-  // Build new provider models map
-  const existingProviderEntries = state.providerModels.get(provider) ?? [];
-  const newProviderModelsMap = new Map(state.providerModels);
-  newProviderModelsMap.set(provider, [...existingProviderEntries, entry]);
-
-  // Build new alias map
-  const newAliasMap = new Map(state.aliasMap);
-  newAliasMap.set(canonicalId.toLowerCase(), canonicalId);
-
-  return {
-    entries: newEntriesMap,
-    aliasMap: newAliasMap,
-    providerModels: newProviderModelsMap,
-  };
-};
-
 // ============================================================================
 // Pure Query Functions
 // ============================================================================
-
-/**
- * Find models matching a query
- */
-export const findModels = (
-  state: ModelRegistryState,
-  query: ModelQuery
-): readonly ModelRegistryEntry[] => {
-  // Handle generic aliases (e.g., "best-large")
-  const resolvedQuery =
-    query.modelName && isGenericAlias(query.modelName)
-      ? resolveGenericAliasQuery(query)
-      : query;
-
-  // Get initial results
-  const initialResults = resolvedQuery.modelName
-    ? (state.entries.get(normalizeModelName(resolvedQuery.modelName)) ?? [])
-    : Array.from(state.entries.values()).flat();
-
-  // Apply filters and sort
-  return initialResults
-    .filter((e) => matchesQuery(e, resolvedQuery))
-    .sort((a, b) => compareTiers(b.qualityTier, a.qualityTier));
-};
 
 /**
  * Resolve a generic alias query to a tier-based query
@@ -275,7 +169,7 @@ const resolveGenericAliasQuery = (query: ModelQuery): ModelQuery => {
 };
 
 /**
- * Check if an entry matches a query (excluding modelName, which is handled separately)
+ * Check if an entry matches a query
  */
 const matchesQuery = (
   entry: ModelRegistryEntry,
@@ -291,9 +185,10 @@ const matchesQuery = (
     return false;
   }
   if (query.family !== undefined) {
-    const familyModels = MODEL_DEFINITIONS.filter(
-      (m) => m.family.toLowerCase() === query.family!.toLowerCase()
-    ).map((m) => m.id);
+    const config = getConfig();
+    const familyModels = config.models.models
+      .filter((m) => m.family.toLowerCase() === query.family!.toLowerCase())
+      .map((m) => m.id);
     if (!familyModels.includes(entry.canonicalId)) {
       return false;
     }
@@ -302,21 +197,32 @@ const matchesQuery = (
 };
 
 /**
- * Find models that match a model name and are available from specified providers
+ * Find models matching a query
  */
-export const findMatchingModels = (
+const findModels = (
   state: ModelRegistryState,
-  modelName: string,
-  providers: readonly ProviderType[]
-): readonly ModelRegistryEntry[] =>
-  findModels(state, { modelName }).filter((e) => providers.includes(e.provider));
+  query: ModelQuery
+): readonly ModelRegistryEntry[] => {
+  const resolvedQuery =
+    query.modelName && isGenericAlias(query.modelName)
+      ? resolveGenericAliasQuery(query)
+      : query;
+
+  const initialResults = resolvedQuery.modelName
+    ? (state.entries.get(normalizeModelName(resolvedQuery.modelName)) ?? [])
+    : Array.from(state.entries.values()).flat();
+
+  return initialResults
+    .filter((e) => matchesQuery(e, resolvedQuery))
+    .sort((a, b) => compareTiers(b.qualityTier, a.qualityTier));
+};
 
 /**
  * Get the best available model for a generic request
  */
 export const getBestModel = (
   state: ModelRegistryState,
-  minTier: ModelQualityTier = ModelQualityTier.TIER_1,
+  minTier: number = 1,
   providers?: readonly ProviderType[]
 ): ModelRegistryEntry | null => {
   const tiersToCheck = getTiersAbove(minTier);
@@ -336,79 +242,14 @@ export const getBestModel = (
   return null;
 };
 
-/**
- * Get all models available from a provider
- */
-export const getProviderModels = (
-  state: ModelRegistryState,
-  provider: ProviderType
-): readonly ModelRegistryEntry[] => state.providerModels.get(provider) ?? [];
-
-/**
- * Check if a model is supported by any provider
- */
-export const isModelSupported = (
-  state: ModelRegistryState,
-  modelName: string
-): boolean => {
-  if (isGenericAlias(modelName)) {
-    return true;
-  }
-  const canonicalId = normalizeModelName(modelName);
-  return state.entries.has(canonicalId);
-};
-
-/**
- * Get canonical model ID for an alias
- */
-export const getCanonicalId = (
-  state: ModelRegistryState,
-  modelName: string
-): string | null => {
-  if (isGenericAlias(modelName)) {
-    return null; // Generic aliases don't have a single canonical ID
-  }
-  return state.aliasMap.get(modelName.toLowerCase()) ?? null;
-};
-
-/**
- * Convert a registry entry to a ModelConfig
- */
-export const toModelConfig = (entry: ModelRegistryEntry): ModelConfig => ({
-  id: entry.providerModelId,
-  aliases: [entry.canonicalId],
-  qualityTier: entry.qualityTier,
-  limits: entry.limits,
-});
-
-/**
- * Get all supported canonical model IDs
- */
-export const getAllCanonicalIds = (
-  state: ModelRegistryState
-): readonly string[] => Array.from(state.entries.keys());
-
-/**
- * Get all supported providers
- */
-export const getAllProviders = (
-  state: ModelRegistryState
-): readonly ProviderType[] => Array.from(state.providerModels.keys());
-
 // ============================================================================
 // Singleton State Management
 // ============================================================================
 
-/**
- * Cached registry state for singleton pattern
- */
 let registryState: ModelRegistryState | null = null;
 
 /**
  * Get the global model registry state
- *
- * For new code, prefer creating your own state with `createModelRegistry()`
- * and passing it explicitly to functions.
  */
 export const getModelRegistryState = (): ModelRegistryState => {
   if (!registryState) {

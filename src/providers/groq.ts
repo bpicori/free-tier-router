@@ -1,196 +1,82 @@
+/**
+ * Groq Provider
+ *
+ * Provides Groq configuration loaded from config/providers/groq.yml
+ * API Docs: https://console.groq.com/docs/api
+ */
+
 import type { ProviderDefinition } from "../types/provider.js";
 import type { ModelConfig } from "../types/models.js";
-import { ModelQualityTier } from "../types/models.js";
+import { getConfig } from "../config/index.js";
 
 /**
- * Groq provider configuration
- * API Docs: https://console.groq.com/docs/api
- *
- * Free tier limits (approximate):
- * - 30 requests per minute
- * - 14,400 tokens per minute (varies by model)
- * - 14,400 requests per day
+ * Build ProviderDefinition from loaded config
  */
+const buildGroqProvider = (): ProviderDefinition => {
+  const config = getConfig();
+  const providerConfig = config.providers.get("groq");
 
-/**
- * Groq model configurations with free tier rate limits
- *
- * Rate limits from https://console.groq.com/docs/rate-limits
- * Note: Free tier limits are subject to change
- */
-const GROQ_MODELS: ModelConfig[] = [
-  // Tier 5 - Frontier/Reasoning
-  {
-    id: "deepseek-r1-distill-llama-70b",
-    aliases: ["deepseek-r1", "deepseek-r1-0528"],
-    qualityTier: ModelQualityTier.TIER_5,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerDay: 1000,
-      tokensPerMinute: 6000,
-    },
-  },
+  if (!providerConfig) {
+    throw new Error("Groq provider config not found. Check config/providers/groq.yml");
+  }
 
-  // Tier 3 - Large Models
-  {
-    id: "llama-3.3-70b-versatile",
-    aliases: ["llama-3.3-70b", "llama-3.3-70b-instruct"],
-    qualityTier: ModelQualityTier.TIER_3,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerDay: 14400,
-      tokensPerMinute: 6000,
-      tokensPerDay: 500000,
-    },
-  },
-  {
-    id: "llama-3.3-70b-specdec",
-    aliases: [],
-    qualityTier: ModelQualityTier.TIER_3,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerDay: 14400,
-      tokensPerMinute: 6000,
-      tokensPerDay: 500000,
-    },
-  },
-  {
-    id: "llama-3.1-70b-versatile",
-    aliases: ["llama-3.1-70b", "llama-3.1-70b-instruct"],
-    qualityTier: ModelQualityTier.TIER_3,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerDay: 14400,
-      tokensPerMinute: 6000,
-      tokensPerDay: 500000,
-    },
-  },
+  // Get model tier info from models config
+  const modelTiers = new Map(
+    config.models.models.map((m) => [m.id, m.tier])
+  );
 
-  // Tier 2 - Medium Models
-  {
-    id: "qwen-qwq-32b",
-    aliases: ["qwen-2.5-32b", "qwen-2.5-32b-instruct"],
-    qualityTier: ModelQualityTier.TIER_2,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerDay: 14400,
-      tokensPerMinute: 6000,
-      tokensPerDay: 500000,
-    },
-  },
-  {
-    id: "gemma2-9b-it",
-    aliases: ["gemma-2-9b", "gemma-2-9b-it"],
-    qualityTier: ModelQualityTier.TIER_1,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerDay: 14400,
-      tokensPerMinute: 15000,
-      tokensPerDay: 500000,
-    },
-  },
-  {
-    id: "mistral-saba-24b",
-    aliases: ["mistral-small-24b", "mistral-small-24b-instruct"],
-    qualityTier: ModelQualityTier.TIER_2,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerDay: 14400,
-      tokensPerMinute: 6000,
-      tokensPerDay: 500000,
-    },
-  },
+  // Build ModelConfig array
+  const models: ModelConfig[] = providerConfig.models.map((pm) => ({
+    id: pm.id,
+    aliases: [pm.canonical],
+    qualityTier: modelTiers.get(pm.canonical) ?? 1,
+    limits: pm.limits,
+  }));
 
-  // Tier 1 - Small Models
-  {
-    id: "llama-3.2-3b-preview",
-    aliases: ["llama-3.2-3b", "llama-3.2-3b-instruct"],
-    qualityTier: ModelQualityTier.TIER_1,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerDay: 14400,
-      tokensPerMinute: 6000,
-      tokensPerDay: 500000,
-    },
-  },
-  {
-    id: "llama-3.2-1b-preview",
-    aliases: ["llama-3.2-1b", "llama-3.2-1b-instruct"],
-    qualityTier: ModelQualityTier.TIER_1,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerDay: 14400,
-      tokensPerMinute: 6000,
-      tokensPerDay: 500000,
-    },
-  },
-  {
-    id: "llama-3.1-8b-instant",
-    aliases: ["llama-3.1-8b", "llama-3.1-8b-instruct"],
-    qualityTier: ModelQualityTier.TIER_1,
-    limits: {
-      requestsPerMinute: 30,
-      requestsPerDay: 14400,
-      tokensPerMinute: 6000,
-      tokensPerDay: 500000,
-    },
-  },
-];
+  // Build model mapping (canonical -> provider-specific)
+  const modelMapping: Record<string, string> = {};
+  for (const pm of providerConfig.models) {
+    modelMapping[pm.canonical] = pm.id;
+    modelMapping[pm.id] = pm.id; // Also map provider ID to itself
+  }
 
-/**
- * Map canonical model IDs to Groq-specific model IDs
- */
-const GROQ_MODEL_MAPPING: Record<string, string> = {
-  // Tier 5
-  "deepseek-r1": "deepseek-r1-distill-llama-70b",
-  "deepseek-r1-distill-llama-70b": "deepseek-r1-distill-llama-70b",
-
-  // Tier 3
-  "llama-3.3-70b": "llama-3.3-70b-versatile",
-  "llama-3.3-70b-versatile": "llama-3.3-70b-versatile",
-  "llama-3.3-70b-specdec": "llama-3.3-70b-specdec",
-  "llama-3.1-70b": "llama-3.1-70b-versatile",
-  "llama-3.1-70b-versatile": "llama-3.1-70b-versatile",
-
-  // Tier 2
-  "qwen-2.5-32b": "qwen-qwq-32b",
-  "qwen-qwq-32b": "qwen-qwq-32b",
-  "gemma-2-9b": "gemma2-9b-it",
-  "gemma2-9b-it": "gemma2-9b-it",
-  "mistral-small-24b": "mistral-saba-24b",
-  "mistral-saba-24b": "mistral-saba-24b",
-
-  // Tier 1
-  "llama-3.2-3b": "llama-3.2-3b-preview",
-  "llama-3.2-3b-preview": "llama-3.2-3b-preview",
-  "llama-3.2-1b": "llama-3.2-1b-preview",
-  "llama-3.2-1b-preview": "llama-3.2-1b-preview",
-  "llama-3.1-8b": "llama-3.1-8b-instant",
-  "llama-3.1-8b-instant": "llama-3.1-8b-instant",
+  return {
+    name: "groq",
+    displayName: providerConfig.displayName,
+    baseUrl: providerConfig.baseUrl,
+    models,
+    modelMapping,
+  };
 };
+
+/** Cached provider definition */
+let cachedProvider: ProviderDefinition | null = null;
 
 /**
  * Groq provider definition
- *
- * Use with the OpenAI SDK:
- * ```typescript
- * import OpenAI from "openai";
- *
- * const client = new OpenAI({
- *   apiKey: process.env.GROQ_API_KEY,
- *   baseURL: GROQ_PROVIDER.baseUrl,
- * });
- * ```
  */
-export const GROQ_PROVIDER: ProviderDefinition = {
-  name: "groq",
-  displayName: "Groq",
-  baseUrl: "https://api.groq.com/openai/v1",
-  models: GROQ_MODELS,
-  modelMapping: GROQ_MODEL_MAPPING,
-};
+export const GROQ_PROVIDER: ProviderDefinition = new Proxy({} as ProviderDefinition, {
+  get(_, prop) {
+    if (!cachedProvider) {
+      cachedProvider = buildGroqProvider();
+    }
+    return cachedProvider[prop as keyof ProviderDefinition];
+  },
+});
 
 /**
  * Get all Groq model configurations
  */
-export const getGroqModels = (): readonly ModelConfig[] => GROQ_MODELS;
+export const getGroqModels = (): readonly ModelConfig[] => {
+  if (!cachedProvider) {
+    cachedProvider = buildGroqProvider();
+  }
+  return cachedProvider.models;
+};
+
+/**
+ * Reset cached provider (for testing)
+ */
+export const resetGroqProvider = (): void => {
+  cachedProvider = null;
+};

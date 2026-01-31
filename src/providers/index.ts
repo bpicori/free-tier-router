@@ -1,16 +1,16 @@
 /**
  * Providers Module
  *
- * Provider definitions for OpenAI-compatible LLM APIs.
- * Each provider is a pure configuration object that can be used
+ * Provider definitions loaded from config/providers/*.yml.
+ * Each provider builds a ProviderDefinition that can be used
  * with the OpenAI SDK by setting the baseURL.
  */
 
 import type { ProviderDefinition, ProviderType } from "../types/provider.js";
 
 // Re-export provider definitions
-export { GROQ_PROVIDER, getGroqModels } from "./groq.js";
-export { CEREBRAS_PROVIDER, getCerebrasModels } from "./cerebras.js";
+export { GROQ_PROVIDER, getGroqModels, resetGroqProvider } from "./groq.js";
+export { CEREBRAS_PROVIDER, getCerebrasModels, resetCerebrasProvider } from "./cerebras.js";
 
 // Import for registry
 import { GROQ_PROVIDER } from "./groq.js";

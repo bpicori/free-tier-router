@@ -1,56 +1,28 @@
 /**
  * Model Registry Module
  *
- * Provides model definitions, aliases, quality tiers, and provider mappings
+ * Provides model definitions, aliases, and quality tier mappings
  * for intelligent model-first routing.
  */
 
 // Re-export types
-export type { ModelDefinition } from "./aliases.js";
-export type { ModelRegistryEntry, ModelQuery } from "./registry.js";
-export type { TierInfo } from "./tiers.js";
+export type { ModelDefinition, ModelsConfig } from "./model-definitions.js";
+export type { ModelRegistryEntry, ModelQuery, ModelRegistryState } from "./registry.js";
 
-// Re-export aliases functionality
+// Re-export alias resolution functions
 export {
-  MODEL_DEFINITIONS,
-  GENERIC_MODEL_ALIASES,
   normalizeModelName,
   isGenericAlias,
   getGenericAliasConfig,
-  getModelsByFamily,
-  getModelsByTier,
-  getModelsByProvider,
-  getModelDefinition,
   buildAliasMap,
-} from "./aliases.js";
+} from "./model-definitions.js";
 
-// Re-export tiers functionality
-export {
-  TIER_INFO,
-  getTierInfo,
-  compareTiers,
-  meetsTierRequirement,
-  getTiersAbove,
-  getTiersBelow,
-} from "./tiers.js";
+// Re-export tier functions
+export { compareTiers, getTiersAbove } from "./tiers.js";
 
-// Re-export registry functionality
-export type { ModelRegistryState } from "./registry.js";
+// Re-export registry functions
 export {
-  // Factory function
-  createModelRegistry,
-  // Pure query functions
-  findModels,
-  findMatchingModels,
   getBestModel,
-  getProviderModels,
-  isModelSupported,
-  getCanonicalId,
-  toModelConfig,
-  getAllCanonicalIds,
-  getAllProviders,
-  registerModel,
-  // Singleton accessors
   getModelRegistryState,
   resetModelRegistry,
 } from "./registry.js";

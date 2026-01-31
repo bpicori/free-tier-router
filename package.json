@@ -21,7 +21,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "playground": "tsx --env-file=playground/.env playground/test-providers.ts",
+    "playground:rate-limit": "tsx playground/test-rate-limit.ts"
   },
   "keywords": [
     "llm",
@@ -41,6 +43,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.1.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   }

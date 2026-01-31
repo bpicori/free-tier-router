@@ -22,7 +22,7 @@ todos:
     status: completed
   - id: providers
     content: "Implement concrete providers: Groq, Cerebras"
-    status: pending
+    status: completed
   - id: strategies
     content: "Implement routing strategies: Priority, LeastUsed"
     status: pending

@@ -17,6 +17,7 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+playground/.env
 
 # Test coverage
 coverage/

@@ -26,3 +26,18 @@ export {
   getStreamTokenUsage,
   wrapStreamWithCallback,
 } from "./stream.js";
+
+// Re-export concrete providers
+export {
+  createGroqProvider,
+  getGroqModels,
+  groqSupportsModel,
+  GROQ_DEFINITION,
+} from "./groq.js";
+
+export {
+  createCerebrasProvider,
+  getCerebrasModels,
+  cerebrasSupportsModel,
+  CEREBRAS_DEFINITION,
+} from "./cerebras.js";

@@ -108,6 +108,11 @@ Map capability/size names to quality tiers:
 The router builds an in-memory registry from configuration at startup:
 
 ```typescript
+interface ModelsConfig {
+  definitions: ModelDefinition[];                  // Model definitions
+  genericAliases: Record<string, GenericAliasConfig>;
+}
+
 interface ModelRegistryEntry {
   canonicalId: string;       // e.g., "llama-3.3-70b"
   providerModelId: string;   // e.g., "llama-3.3-70b-versatile"

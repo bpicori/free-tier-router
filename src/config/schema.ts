@@ -122,7 +122,7 @@ export interface GenericAliasConfig {
  * Parsed models config
  */
 export interface ModelsConfig {
-  models: ModelDefinition[];
+  definitions: ModelDefinition[];
   genericAliases: Record<string, GenericAliasConfig>;
 }
 

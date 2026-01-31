@@ -79,7 +79,7 @@ const mergeRateLimits = (
  * Convert models config from YAML to runtime format
  */
 const convertModelsConfig = (yaml: ModelsConfigYaml): ModelsConfig => ({
-  models: yaml.models.map(
+  definitions: yaml.models.map(
     (m): ModelDefinition => ({
       id: m.id,
       tier: m.tier,
@@ -156,7 +156,7 @@ const validateProviderModels = (
  * Validate tier values are in range
  */
 const validateTiers = (config: ModelsConfig): void => {
-  for (const model of config.models) {
+  for (const model of config.definitions) {
     if (model.tier < 1 || model.tier > 5) {
       throw new ConfigValidationError(
         `Model "${model.id}" has invalid tier ${model.tier}. Must be 1-5.`
@@ -237,7 +237,7 @@ export const loadConfig = (configDir?: string): LoadedConfig => {
   const providers = loadAllProviderConfigs(configDir);
 
   // Validate provider models reference canonical models
-  const canonicalIds = new Set(models.models.map((m) => m.id));
+  const canonicalIds = new Set(models.definitions.map((m) => m.id));
   for (const provider of providers.values()) {
     validateProviderModels(provider, canonicalIds);
   }

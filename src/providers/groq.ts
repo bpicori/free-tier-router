@@ -22,7 +22,7 @@ const buildGroqProvider = (): ProviderDefinition => {
 
   // Get model tier info from models config
   const modelTiers = new Map(
-    config.models.models.map((m) => [m.id, m.tier])
+    config.models.definitions.map((m) => [m.id, m.tier])
   );
 
   // Build ModelConfig array

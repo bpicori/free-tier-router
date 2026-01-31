@@ -89,7 +89,7 @@ const buildEntry = (
  */
 const buildEntriesFromConfig = (): readonly ModelRegistryEntry[] => {
   const config = getConfig();
-  const modelMap = new Map(config.models.models.map((m) => [m.id, m]));
+  const modelMap = new Map(config.models.definitions.map((m) => [m.id, m]));
   const entries: ModelRegistryEntry[] = [];
 
   for (const providerConfig of config.providers.values()) {
@@ -186,7 +186,7 @@ const matchesQuery = (
   }
   if (query.family !== undefined) {
     const config = getConfig();
-    const familyModels = config.models.models
+    const familyModels = config.models.definitions
       .filter((m) => m.family.toLowerCase() === query.family!.toLowerCase())
       .map((m) => m.id);
     if (!familyModels.includes(entry.canonicalId)) {

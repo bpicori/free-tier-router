@@ -17,7 +17,7 @@ export type { ModelDefinition, ModelsConfig } from "../config/index.js";
 /**
  * Get all model definitions from loaded config (internal use)
  */
-const getModelDefinitions = () => getConfig().models.models;
+const getModelDefinitions = () => getConfig().models.definitions;
 
 /**
  * Get generic alias configuration from loaded config (internal use)

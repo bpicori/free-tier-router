@@ -44,7 +44,7 @@ import {
   findProvidersForModel,
   findProvidersForGenericAlias,
 } from "./routing/index.js";
-import { debug, setDebugEnabled } from "./utils/debug.js";
+import { debug, setDebugEnabled, extractMessageContent } from "./utils/index.js";
 
 /**
  * Result metadata from a completion request
@@ -183,9 +183,7 @@ export const createRouter = (config: FreeTierRouterConfig): Router => {
     const result = await executeWithRetry<ChatCompletion>(
       {
         model: params.model,
-        messages: params.messages.map((m) => ({
-          content: typeof m.content === "string" ? m.content : "",
-        })),
+        messages: extractMessageContent(params.messages),
       },
       async (provider, model) => {
         const response = await provider.client.chat.completions.create({
@@ -233,9 +231,7 @@ export const createRouter = (config: FreeTierRouterConfig): Router => {
     const result = await executeWithRetry<Stream<ChatCompletionChunk>>(
       {
         model: params.model,
-        messages: params.messages.map((m) => ({
-          content: typeof m.content === "string" ? m.content : "",
-        })),
+        messages: extractMessageContent(params.messages),
       },
       async (provider, model) => {
         const stream = await provider.client.chat.completions.create({

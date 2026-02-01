@@ -28,3 +28,5 @@ npm-debug.log*
 
 # Lock files (optional - remove if you want to commit)
 # package-lock.json
+.stryker-tmp/
+reports/

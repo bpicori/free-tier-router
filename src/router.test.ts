@@ -250,6 +250,16 @@ describe("createRouter", () => {
       expect(router.isModelAvailable("best")).toBe(true);
       expect(router.isModelAvailable("best-large")).toBe(true);
     });
+
+    it("should return false for generic alias when no provider supports the tier", () => {
+      // Cerebras only has tiers 1, 3, 4 - no tier 2 models
+      const cerebrasOnlyRouter = createRouter({
+        providers: [{ type: "cerebras", apiKey: "cerebras-key" }],
+      });
+
+      // best-medium requires tier 2, which Cerebras doesn't have
+      expect(cerebrasOnlyRouter.isModelAvailable("best-medium")).toBe(false);
+    });
   });
 
   describe("chat.completions.create (non-streaming)", () => {

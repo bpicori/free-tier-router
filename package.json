@@ -28,6 +28,8 @@
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:mutation": "stryker run",
+    "test:mutation:file": "stryker run --mutate",
     "lint": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -64,6 +66,9 @@
     "node": ">=18.0.0"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "^9.5.0",
+    "@stryker-mutator/typescript-checker": "^9.5.0",
+    "@stryker-mutator/vitest-runner": "^9.5.0",
     "@types/node": "^25.1.0",
     "prettier": "^3.8.1",
     "tsx": "^4.21.0",

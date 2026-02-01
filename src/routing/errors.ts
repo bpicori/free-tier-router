@@ -21,7 +21,9 @@ interface RateLimitErrorShape {
  * @param error - The error to check
  * @returns True if the error indicates rate limiting
  */
-export const isRateLimitError = (error: unknown): error is RateLimitErrorShape => {
+export const isRateLimitError = (
+  error: unknown
+): error is RateLimitErrorShape => {
   if (typeof error !== "object" || error === null) {
     return false;
   }

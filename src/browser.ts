@@ -28,7 +28,11 @@ export * from "./providers/index.js";
 export * from "./strategies/index.js";
 
 // Export main router
-export { createRouter, type Router, type CompletionMetadata } from "./router.js";
+export {
+  createRouter,
+  type Router,
+  type CompletionMetadata,
+} from "./router.js";
 
 // Export debug utilities
 export { setDebugEnabled, isDebugEnabled } from "./utils/debug.js";

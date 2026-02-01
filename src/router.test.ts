@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import type { ChatCompletion, ChatCompletionChunk } from "openai/resources/chat/completions";
+import type {
+  ChatCompletion,
+  ChatCompletionChunk,
+} from "openai/resources/chat/completions";
 import type { Stream } from "openai/streaming";
 
 // Create a shared mock for OpenAI create function

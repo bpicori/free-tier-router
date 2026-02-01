@@ -10,7 +10,11 @@ import type { ProviderDefinition, ProviderType } from "../types/provider.js";
 
 // Re-export provider definitions
 export { GROQ_PROVIDER, getGroqModels, resetGroqProvider } from "./groq.js";
-export { CEREBRAS_PROVIDER, getCerebrasModels, resetCerebrasProvider } from "./cerebras.js";
+export {
+  CEREBRAS_PROVIDER,
+  getCerebrasModels,
+  resetCerebrasProvider,
+} from "./cerebras.js";
 export {
   OPENROUTER_PROVIDER,
   getOpenRouterModels,

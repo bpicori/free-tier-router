@@ -81,11 +81,20 @@ const printColored = (color: keyof typeof colors, text: string) =>
 
 const printHeader = () => {
   println();
-  printColored("cyan", "╔════════════════════════════════════════════════════════╗\n");
+  printColored(
+    "cyan",
+    "╔════════════════════════════════════════════════════════╗\n"
+  );
   printColored("cyan", "║");
-  printColored("bright", "          Free Tier Router - Terminal Chat            ");
+  printColored(
+    "bright",
+    "          Free Tier Router - Terminal Chat            "
+  );
   printColored("cyan", "║\n");
-  printColored("cyan", "╚════════════════════════════════════════════════════════╝\n");
+  printColored(
+    "cyan",
+    "╚════════════════════════════════════════════════════════╝\n"
+  );
   println();
 };
 
@@ -108,7 +117,10 @@ const printHelp = () => {
 // State Management
 // ─────────────────────────────────────────────────────────────────
 
-const createInitialState = (model: string, debug: boolean = true): ChatState => ({
+const createInitialState = (
+  model: string,
+  debug: boolean = true
+): ChatState => ({
   messages: [{ role: "system", content: SYSTEM_PROMPT }],
   model,
   running: true,
@@ -215,7 +227,10 @@ const handleCommand = async (
       println();
       printColored("green", `Debug mode: ${newState.debug ? "ON" : "OFF"}\n`);
       if (newState.debug) {
-        printColored("dim", "Routing info will be shown after each response.\n");
+        printColored(
+          "dim",
+          "Routing info will be shown after each response.\n"
+        );
       }
       println();
       return { type: "continue", state: newState };
@@ -243,7 +258,10 @@ const handleCommand = async (
           }
         }
       } catch (error) {
-        printColored("red", `Error getting quota: ${error instanceof Error ? error.message : String(error)}\n`);
+        printColored(
+          "red",
+          `Error getting quota: ${error instanceof Error ? error.message : String(error)}\n`
+        );
       }
       println();
       return { type: "continue", state };
@@ -253,9 +271,15 @@ const handleCommand = async (
       println();
       try {
         await router.clearAllCooldowns();
-        printColored("green", "All cooldowns and rate limit tracking cleared.\n");
+        printColored(
+          "green",
+          "All cooldowns and rate limit tracking cleared.\n"
+        );
       } catch (error) {
-        printColored("red", `Error: ${error instanceof Error ? error.message : String(error)}\n`);
+        printColored(
+          "red",
+          `Error: ${error instanceof Error ? error.message : String(error)}\n`
+        );
       }
       println();
       return { type: "continue", state };
@@ -281,20 +305,29 @@ const sendMessage = async (
   state: ChatState,
   userMessage: string
 ): Promise<ChatState> => {
-  const stateWithUser = addMessage(state, { role: "user", content: userMessage });
+  const stateWithUser = addMessage(state, {
+    role: "user",
+    content: userMessage,
+  });
   const startTime = Date.now();
 
   // Show pre-request debug info
   if (state.debug) {
     println();
-    printColored("blue", "┌─ Request ──────────────────────────────────────────────\n");
+    printColored(
+      "blue",
+      "┌─ Request ──────────────────────────────────────────────\n"
+    );
     printColored("blue", "│ ");
     printColored("dim", `Model requested: `);
     println(state.model);
     printColored("blue", "│ ");
     printColored("dim", `Messages in context: `);
     println(String(stateWithUser.messages.length));
-    printColored("blue", "└───────────────────────────────────────────────────────\n");
+    printColored(
+      "blue",
+      "└───────────────────────────────────────────────────────\n"
+    );
   }
 
   println();
@@ -323,7 +356,10 @@ const sendMessage = async (
 
     // Show routing debug info
     if (state.debug) {
-      printColored("blue", "┌─ Routing ─────────────────────────────────────────────\n");
+      printColored(
+        "blue",
+        "┌─ Routing ─────────────────────────────────────────────\n"
+      );
       printColored("blue", "│ ");
       printColored("dim", `Provider: `);
       println(metadata.provider);
@@ -336,7 +372,10 @@ const sendMessage = async (
       printColored("blue", "│ ");
       printColored("dim", `Latency: `);
       println(`${latencyMs}ms`);
-      printColored("blue", "└───────────────────────────────────────────────────────\n");
+      printColored(
+        "blue",
+        "└───────────────────────────────────────────────────────\n"
+      );
       println();
     }
 
@@ -350,7 +389,7 @@ const sendMessage = async (
       "red",
       `\nError: ${error instanceof Error ? error.message : String(error)}\n`
     );
-    
+
     // Show error details in debug mode
     if (state.debug && error instanceof Error) {
       if (error.cause) {
@@ -360,7 +399,10 @@ const sendMessage = async (
       if (error.stack) {
         println();
         printColored("dim", "Stack trace:\n");
-        printColored("dim", error.stack.split("\n").slice(0, 5).join("\n") + "\n");
+        printColored(
+          "dim",
+          error.stack.split("\n").slice(0, 5).join("\n") + "\n"
+        );
       }
       // Check for nested error details
       const anyError = error as any;
@@ -371,7 +413,7 @@ const sendMessage = async (
         printColored("dim", `API Error: ${JSON.stringify(anyError.error)}\n`);
       }
     }
-    
+
     return stateWithUser;
   }
 };
@@ -389,7 +431,10 @@ const createReadlineInterface = () =>
 const prompt = (rl: readline.Interface, promptText: string): Promise<string> =>
   new Promise((resolve) => rl.question(promptText, resolve));
 
-const runChatLoop = async (router: Router, initialState: ChatState): Promise<void> => {
+const runChatLoop = async (
+  router: Router,
+  initialState: ChatState
+): Promise<void> => {
   const rl = createReadlineInterface();
   let state = initialState;
 
@@ -408,11 +453,11 @@ const runChatLoop = async (router: Router, initialState: ChatState): Promise<voi
 
     if (trimmedInput.startsWith("/")) {
       const result = await handleCommand(trimmedInput, state, router);
-      
+
       if (result.type === "exit") {
         break;
       }
-      
+
       state = result.state;
       continue;
     }
@@ -489,7 +534,9 @@ const main = async (): Promise<void> => {
     strategy: "least-used",
   });
 
-  const initialModel = router.isModelAvailable(DEFAULT_MODEL) ? DEFAULT_MODEL : "fast";
+  const initialModel = router.isModelAvailable(DEFAULT_MODEL)
+    ? DEFAULT_MODEL
+    : "fast";
   const initialState = createInitialState(initialModel);
 
   try {
@@ -500,6 +547,9 @@ const main = async (): Promise<void> => {
 };
 
 main().catch((error) => {
-  printColored("red", `Fatal error: ${error instanceof Error ? error.message : String(error)}\n`);
+  printColored(
+    "red",
+    `Fatal error: ${error instanceof Error ? error.message : String(error)}\n`
+  );
   process.exit(1);
 });

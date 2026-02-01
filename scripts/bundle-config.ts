@@ -57,5 +57,7 @@ export const BUNDLED_PROVIDERS: Record<string, ProviderConfigYaml> = ${JSON.stri
 writeFileSync(OUTPUT_FILE, output);
 console.log(`Generated ${OUTPUT_FILE}`);
 console.log(`  - Models: ${models.models.length} definitions`);
-console.log(`  - Generic aliases: ${Object.keys(models.generic_aliases).length}`);
+console.log(
+  `  - Generic aliases: ${Object.keys(models.generic_aliases).length}`
+);
 console.log(`  - Providers: ${Object.keys(providers).join(", ")}`);

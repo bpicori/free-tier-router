@@ -17,7 +17,9 @@ const buildGroqProvider = (): ProviderDefinition => {
   const providerConfig = config.providers.get("groq");
 
   if (!providerConfig) {
-    throw new Error("Groq provider config not found. Check config/providers/groq.yml");
+    throw new Error(
+      "Groq provider config not found. Check config/providers/groq.yml"
+    );
   }
 
   // Get model tier info from models config
@@ -55,14 +57,17 @@ let cachedProvider: ProviderDefinition | null = null;
 /**
  * Groq provider definition
  */
-export const GROQ_PROVIDER: ProviderDefinition = new Proxy({} as ProviderDefinition, {
-  get(_, prop) {
-    if (!cachedProvider) {
-      cachedProvider = buildGroqProvider();
-    }
-    return cachedProvider[prop as keyof ProviderDefinition];
-  },
-});
+export const GROQ_PROVIDER: ProviderDefinition = new Proxy(
+  {} as ProviderDefinition,
+  {
+    get(_, prop) {
+      if (!cachedProvider) {
+        cachedProvider = buildGroqProvider();
+      }
+      return cachedProvider[prop as keyof ProviderDefinition];
+    },
+  }
+);
 
 /**
  * Get all Groq model configurations

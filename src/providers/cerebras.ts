@@ -17,7 +17,9 @@ const buildCerebrasProvider = (): ProviderDefinition => {
   const providerConfig = config.providers.get("cerebras");
 
   if (!providerConfig) {
-    throw new Error("Cerebras provider config not found. Check config/providers/cerebras.yml");
+    throw new Error(
+      "Cerebras provider config not found. Check config/providers/cerebras.yml"
+    );
   }
 
   // Get model tier info from models config
@@ -55,14 +57,17 @@ let cachedProvider: ProviderDefinition | null = null;
 /**
  * Cerebras provider definition
  */
-export const CEREBRAS_PROVIDER: ProviderDefinition = new Proxy({} as ProviderDefinition, {
-  get(_, prop) {
-    if (!cachedProvider) {
-      cachedProvider = buildCerebrasProvider();
-    }
-    return cachedProvider[prop as keyof ProviderDefinition];
-  },
-});
+export const CEREBRAS_PROVIDER: ProviderDefinition = new Proxy(
+  {} as ProviderDefinition,
+  {
+    get(_, prop) {
+      if (!cachedProvider) {
+        cachedProvider = buildCerebrasProvider();
+      }
+      return cachedProvider[prop as keyof ProviderDefinition];
+    },
+  }
+);
 
 /**
  * Get all Cerebras model configurations

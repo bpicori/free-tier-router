@@ -140,8 +140,7 @@ const main = async () => {
   // Test Cerebras
   if (CEREBRAS_API_KEY) {
     const cerebrasClient = createClient(CEREBRAS_PROVIDER, CEREBRAS_API_KEY);
-    const cerebrasModel =
-      CEREBRAS_PROVIDER.models[0]?.id ?? "llama-3.1-8b";
+    const cerebrasModel = CEREBRAS_PROVIDER.models[0]?.id ?? "llama-3.1-8b";
 
     await testCompletion("Cerebras", cerebrasClient, cerebrasModel);
     await testStreamingCompletion("Cerebras", cerebrasClient, cerebrasModel);
@@ -151,29 +150,48 @@ const main = async () => {
 
   // Test OpenRouter
   if (OPENROUTER_API_KEY) {
-    const openrouterClient = createClient(OPENROUTER_PROVIDER, OPENROUTER_API_KEY);
+    const openrouterClient = createClient(
+      OPENROUTER_PROVIDER,
+      OPENROUTER_API_KEY
+    );
     const openrouterModel =
       OPENROUTER_PROVIDER.models[0]?.id ?? "openai/gpt-oss-120b:free";
 
     await testCompletion("OpenRouter", openrouterClient, openrouterModel);
-    await testStreamingCompletion("OpenRouter", openrouterClient, openrouterModel);
+    await testStreamingCompletion(
+      "OpenRouter",
+      openrouterClient,
+      openrouterModel
+    );
   } else {
     log("⚠️  OPENROUTER_API_KEY not set - skipping OpenRouter tests");
   }
 
   // Test NVIDIA NIM
   if (NVIDIA_NIM_API_KEY) {
-    const nvidiaNimClient = createClient(NVIDIA_NIM_PROVIDER, NVIDIA_NIM_API_KEY);
+    const nvidiaNimClient = createClient(
+      NVIDIA_NIM_PROVIDER,
+      NVIDIA_NIM_API_KEY
+    );
     const nvidiaNimModel =
       NVIDIA_NIM_PROVIDER.models[0]?.id ?? "openai/gpt-oss-120b";
 
     await testCompletion("NVIDIA NIM", nvidiaNimClient, nvidiaNimModel);
-    await testStreamingCompletion("NVIDIA NIM", nvidiaNimClient, nvidiaNimModel);
+    await testStreamingCompletion(
+      "NVIDIA NIM",
+      nvidiaNimClient,
+      nvidiaNimModel
+    );
   } else {
     log("⚠️  NVIDIA_NIM_API_KEY not set - skipping NVIDIA NIM tests");
   }
 
-  if (!GROQ_API_KEY && !CEREBRAS_API_KEY && !OPENROUTER_API_KEY && !NVIDIA_NIM_API_KEY) {
+  if (
+    !GROQ_API_KEY &&
+    !CEREBRAS_API_KEY &&
+    !OPENROUTER_API_KEY &&
+    !NVIDIA_NIM_API_KEY
+  ) {
     console.log("\n💡 To run tests, set your API keys:");
     console.log("   export GROQ_API_KEY=your-key-here");
     console.log("   export CEREBRAS_API_KEY=your-key-here");

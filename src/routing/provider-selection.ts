@@ -6,7 +6,10 @@
  */
 
 import type { ProviderModelCandidate } from "../types/provider.js";
-import { providerSupportsModel, getProviderModelId } from "../types/provider.js";
+import {
+  providerSupportsModel,
+  getProviderModelId,
+} from "../types/provider.js";
 import type { RoutingContext, SelectionError } from "../types/strategy.js";
 import { ok, err, type Result } from "neverthrow";
 import {
@@ -51,14 +54,16 @@ export const findProvidersForModel = (
   modelId: string,
   providers: ConfiguredProvider[]
 ): ProviderMatch[] => {
-  debug.log(`findProvidersForModel: checking ${providers.length} providers for model "${modelId}"`);
+  debug.log(
+    `findProvidersForModel: checking ${providers.length} providers for model "${modelId}"`
+  );
   providers.forEach(({ definition }) => {
     debug.log(`  Provider ${definition.name}:`, {
-      models: definition.models.map(m => m.id),
+      models: definition.models.map((m) => m.id),
       modelMapping: Object.keys(definition.modelMapping),
     });
   });
-  
+
   return providers
     .filter(({ definition }) => providerSupportsModel(definition, modelId))
     .flatMap((configuredProvider) => {
@@ -134,8 +139,13 @@ const buildCandidate = async (
 
   // Check if in cooldown
   if (await tracker.isInCooldown(definition.name, model.id)) {
-    const cooldownUntil = await tracker.getCooldownUntil(definition.name, model.id);
-    debug.log(`Skipping ${definition.name}/${model.id}: in cooldown until ${cooldownUntil?.toISOString()}`);
+    const cooldownUntil = await tracker.getCooldownUntil(
+      definition.name,
+      model.id
+    );
+    debug.log(
+      `Skipping ${definition.name}/${model.id}: in cooldown until ${cooldownUntil?.toISOString()}`
+    );
     return null;
   }
 
@@ -231,7 +241,10 @@ export const selectProvider = async (
     ? findProvidersForGenericAlias(resolvedModel, providers)
     : findProvidersForModel(resolvedModel, providers);
 
-  debug.log(`Found ${matches.length} matching providers:`, matches.map(m => `${m.provider.definition.name}/${m.model.id}`));
+  debug.log(
+    `Found ${matches.length} matching providers:`,
+    matches.map((m) => `${m.provider.definition.name}/${m.model.id}`)
+  );
 
   if (matches.length === 0) {
     return err({ type: "no_matching_providers", model: resolvedModel });
@@ -268,7 +281,10 @@ export const selectProvider = async (
   );
 
   if (!configuredProvider) {
-    return err({ type: "provider_not_found", providerName: selected.provider.name });
+    return err({
+      type: "provider_not_found",
+      providerName: selected.provider.name,
+    });
   }
 
   return ok({ provider: configuredProvider, model: selected.model });

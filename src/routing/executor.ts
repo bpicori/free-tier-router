@@ -82,7 +82,8 @@ export const executeWithRetry = async <T>(
 ): Promise<ExecutionResult<T>> => {
   const { selection, retry, throwOnExhausted } = deps;
   const { tracker, providers, stateStore } = selection;
-  const { maxRetries, initialBackoffMs, maxBackoffMs, backoffMultiplier } = retry;
+  const { maxRetries, initialBackoffMs, maxBackoffMs, backoffMultiplier } =
+    retry;
 
   const excludedProviders = new Set<string>();
   let retryCount = 0;
@@ -96,7 +97,11 @@ export const executeWithRetry = async <T>(
     };
 
     // Select provider
-    const selectionResult = await selectProvider(params.model, context, selection);
+    const selectionResult = await selectProvider(
+      params.model,
+      context,
+      selection
+    );
 
     if (selectionResult.isErr()) {
       // No more providers available
@@ -216,7 +221,7 @@ const findEarliestReset = async (
   );
 
   const validCooldowns = allCooldowns.filter((c): c is Date => c !== null);
-  
+
   return validCooldowns.length > 0
     ? new Date(Math.min(...validCooldowns.map((d) => d.getTime())))
     : undefined;

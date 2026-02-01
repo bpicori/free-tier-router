@@ -7,7 +7,11 @@
 
 // Re-export types
 export type { ModelDefinition, ModelsConfig } from "./model-definitions.js";
-export type { ModelRegistryEntry, ModelQuery, ModelRegistryState } from "./registry.js";
+export type {
+  ModelRegistryEntry,
+  ModelQuery,
+  ModelRegistryState,
+} from "./registry.js";
 
 // Re-export alias resolution functions
 export {

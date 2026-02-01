@@ -17,8 +17,15 @@
  *   GROQ_API_KEY=xxx CEREBRAS_API_KEY=xxx npx tsx playground/test-router.ts
  */
 
-import { createRouter, type Router, type CompletionMetadata } from "../src/router.js";
-import type { ProviderConfig, RoutingStrategyType } from "../src/types/config.js";
+import {
+  createRouter,
+  type Router,
+  type CompletionMetadata,
+} from "../src/router.js";
+import type {
+  ProviderConfig,
+  RoutingStrategyType,
+} from "../src/types/config.js";
 
 // ─────────────────────────────────────────────────────────────────
 // Configuration
@@ -36,7 +43,9 @@ const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
 const log = (message: string) => console.log(`\n${message}`);
 const divider = () => console.log("─".repeat(60));
 
-const formatMetadata = (metadata: CompletionMetadata | Omit<CompletionMetadata, "latencyMs">) => {
+const formatMetadata = (
+  metadata: CompletionMetadata | Omit<CompletionMetadata, "latencyMs">
+) => {
   const parts = [
     `provider: ${metadata.provider}`,
     `model: ${metadata.model}`,
@@ -55,16 +64,22 @@ const formatMetadata = (metadata: CompletionMetadata | Omit<CompletionMetadata, 
 const testOpenAICompatible = async (router: Router) => {
   log("📌 Test 1: OpenAI-Compatible Interface");
   divider();
-  console.log("Using router.chat.completions.create() - drop-in replacement for OpenAI SDK\n");
+  console.log(
+    "Using router.chat.completions.create() - drop-in replacement for OpenAI SDK\n"
+  );
 
   try {
     const response = await router.chat.completions.create({
       model: "llama-3.3-70b", // Use a model alias
-      messages: [{ role: "user", content: "What is 2 + 2? Answer in one word." }],
+      messages: [
+        { role: "user", content: "What is 2 + 2? Answer in one word." },
+      ],
       max_tokens: 50,
     });
 
-    console.log(`Response: ${response.choices[0]?.message?.content ?? "(no content)"}`);
+    console.log(
+      `Response: ${response.choices[0]?.message?.content ?? "(no content)"}`
+    );
     console.log(`Tokens used: ${response.usage?.total_tokens ?? "N/A"}`);
     console.log(`Model returned: ${response.model}`);
   } catch (error) {
@@ -91,7 +106,9 @@ const testCompletionWithMetadata = async (router: Router) => {
       max_tokens: 100,
     });
 
-    console.log(`Response: ${response.choices[0]?.message?.content ?? "(no content)"}`);
+    console.log(
+      `Response: ${response.choices[0]?.message?.content ?? "(no content)"}`
+    );
     console.log(`Metadata: ${formatMetadata(metadata)}`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : error}`);
@@ -105,7 +122,9 @@ const testCompletionWithMetadata = async (router: Router) => {
 const testStreamingCompletion = async (router: Router) => {
   log("📌 Test 3: Streaming Completion");
   divider();
-  console.log("Using router.createCompletionStream() - streaming with metadata\n");
+  console.log(
+    "Using router.createCompletionStream() - streaming with metadata\n"
+  );
 
   try {
     const { stream, metadata } = await router.createCompletionStream({
@@ -176,7 +195,9 @@ const testGenericAliases = async (router: Router) => {
 
   for (const alias of aliases) {
     const isAvailable = router.isModelAvailable(alias);
-    console.log(`  ${alias}: ${isAvailable ? "✅ available" : "❌ not available"}`);
+    console.log(
+      `  ${alias}: ${isAvailable ? "✅ available" : "❌ not available"}`
+    );
   }
 
   // Try using the 'fast' alias
@@ -189,10 +210,14 @@ const testGenericAliases = async (router: Router) => {
         max_tokens: 20,
       });
 
-      console.log(`  Response: ${response.choices[0]?.message?.content ?? "(no content)"}`);
+      console.log(
+        `  Response: ${response.choices[0]?.message?.content ?? "(no content)"}`
+      );
       console.log(`  Routed to: ${metadata.provider}/${metadata.model}`);
     } catch (error) {
-      console.error(`  Error: ${error instanceof Error ? error.message : error}`);
+      console.error(
+        `  Error: ${error instanceof Error ? error.message : error}`
+      );
     }
   }
 };
@@ -253,7 +278,9 @@ const testQuotaStatus = async (router: Router) => {
   }
 
   if (status.length > 5) {
-    console.log(`\n... and ${status.length - 5} more provider/model combinations`);
+    console.log(
+      `\n... and ${status.length - 5} more provider/model combinations`
+    );
   }
 };
 
@@ -268,9 +295,12 @@ const testCustomAliases = async () => {
 
   const providers: ProviderConfig[] = [];
   if (GROQ_API_KEY) providers.push({ type: "groq", apiKey: GROQ_API_KEY });
-  if (CEREBRAS_API_KEY) providers.push({ type: "cerebras", apiKey: CEREBRAS_API_KEY });
-  if (OPENROUTER_API_KEY) providers.push({ type: "openrouter", apiKey: OPENROUTER_API_KEY });
-  if (NVIDIA_NIM_API_KEY) providers.push({ type: "nvidia-nim", apiKey: NVIDIA_NIM_API_KEY });
+  if (CEREBRAS_API_KEY)
+    providers.push({ type: "cerebras", apiKey: CEREBRAS_API_KEY });
+  if (OPENROUTER_API_KEY)
+    providers.push({ type: "openrouter", apiKey: OPENROUTER_API_KEY });
+  if (NVIDIA_NIM_API_KEY)
+    providers.push({ type: "nvidia-nim", apiKey: NVIDIA_NIM_API_KEY });
 
   if (providers.length === 0) {
     console.log("⚠️  No API keys available");
@@ -294,7 +324,9 @@ const testCustomAliases = async () => {
       max_tokens: 20,
     });
 
-    console.log(`  Response: ${response.choices[0]?.message?.content ?? "(no content)"}`);
+    console.log(
+      `  Response: ${response.choices[0]?.message?.content ?? "(no content)"}`
+    );
     console.log(`  Routed to: ${metadata.provider}/${metadata.model}`);
   } catch (error) {
     console.error(`  Error: ${error instanceof Error ? error.message : error}`);
@@ -313,10 +345,22 @@ const testStrategies = async () => {
   console.log("Testing different routing strategies\n");
 
   const providers: ProviderConfig[] = [];
-  if (GROQ_API_KEY) providers.push({ type: "groq", apiKey: GROQ_API_KEY, priority: 1 });
-  if (CEREBRAS_API_KEY) providers.push({ type: "cerebras", apiKey: CEREBRAS_API_KEY, priority: 2 });
-  if (OPENROUTER_API_KEY) providers.push({ type: "openrouter", apiKey: OPENROUTER_API_KEY, priority: 3 });
-  if (NVIDIA_NIM_API_KEY) providers.push({ type: "nvidia-nim", apiKey: NVIDIA_NIM_API_KEY, priority: 4 });
+  if (GROQ_API_KEY)
+    providers.push({ type: "groq", apiKey: GROQ_API_KEY, priority: 1 });
+  if (CEREBRAS_API_KEY)
+    providers.push({ type: "cerebras", apiKey: CEREBRAS_API_KEY, priority: 2 });
+  if (OPENROUTER_API_KEY)
+    providers.push({
+      type: "openrouter",
+      apiKey: OPENROUTER_API_KEY,
+      priority: 3,
+    });
+  if (NVIDIA_NIM_API_KEY)
+    providers.push({
+      type: "nvidia-nim",
+      apiKey: NVIDIA_NIM_API_KEY,
+      priority: 4,
+    });
 
   if (providers.length < 2) {
     console.log("⚠️  Need at least 2 providers to test strategies");
@@ -340,7 +384,9 @@ const testStrategies = async () => {
         console.log(`  Request ${i + 1}: ${metadata.provider}`);
       }
     } catch (error) {
-      console.error(`  Error: ${error instanceof Error ? error.message : error}`);
+      console.error(
+        `  Error: ${error instanceof Error ? error.message : error}`
+      );
     }
 
     await router.close();

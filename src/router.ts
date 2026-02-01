@@ -452,7 +452,7 @@ const tryCreateProvider = (
     const definition = getProvider(providerConfig.type);
     debug.log(`Got definition for ${providerConfig.type}:`, {
       name: definition.name,
-      models: definition.models.map(m => m.id),
+      models: definition.models.map((m) => m.id),
     });
 
     // Create OpenAI client configured for this provider
@@ -477,12 +477,17 @@ const tryCreateProvider = (
 const createProviders = (config: ResolvedConfig): ConfiguredProvider[] => {
   debug.log(`createProviders: ${config.providers.length} providers in config`);
   const enabledProviders = config.providers.filter((p) => p.enabled);
-  debug.log(`Enabled providers: ${enabledProviders.length}`, enabledProviders.map(p => p.type));
-  
+  debug.log(
+    `Enabled providers: ${enabledProviders.length}`,
+    enabledProviders.map((p) => p.type)
+  );
+
   const created = enabledProviders
-    .map((providerConfig) => tryCreateProvider(providerConfig, config.timeoutMs))
+    .map((providerConfig) =>
+      tryCreateProvider(providerConfig, config.timeoutMs)
+    )
     .filter((provider): provider is ConfiguredProvider => provider !== null);
-  
+
   debug.log(`Successfully created ${created.length} providers`);
   return created;
 };

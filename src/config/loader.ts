@@ -1,17 +1,18 @@
 /**
  * Configuration Loader
  *
- * Loads and validates YAML configuration files for models and providers.
+ * Loads configuration from bundled TypeScript (generated from YAML at build time).
+ * This approach works in all environments: Node.js, browser, Cloudflare Workers.
+ *
+ * To update configuration:
+ * 1. Edit config/models.yml or config/providers/*.yml
+ * 2. Run: npm run build:config
+ * 3. Commit the regenerated src/config/bundled.ts
  */
 
-import { parse } from "yaml";
-import { readFileSync, readdirSync } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
+import { BUNDLED_MODELS, BUNDLED_PROVIDERS } from "./bundled.js";
 import type { RateLimits } from "../types/models.js";
 import type {
-  ModelsConfigYaml,
-  ProviderConfigYaml,
   RateLimitsYaml,
   ModelsConfig,
   ProviderConfig,
@@ -19,37 +20,12 @@ import type {
   GenericAliasConfig,
   ProviderModel,
   LoadedConfig,
+  ModelsConfigYaml,
+  ProviderConfigYaml,
 } from "./schema.js";
 
 // ============================================================================
-// Path Resolution
-// ============================================================================
-
-/**
- * Get the config directory path
- */
-const getConfigDir = (): string => {
-  // In ESM, we need to derive __dirname from import.meta.url
-  const currentFile = fileURLToPath(import.meta.url);
-  const srcDir = dirname(dirname(currentFile));
-  const rootDir = dirname(srcDir);
-  return join(rootDir, "config");
-};
-
-// ============================================================================
-// YAML Parsing
-// ============================================================================
-
-/**
- * Parse a YAML file
- */
-const parseYamlFile = <T>(filePath: string): T => {
-  const content = readFileSync(filePath, "utf-8");
-  return parse(content) as T;
-};
-
-// ============================================================================
-// Conversion Functions (YAML -> Runtime types)
+// Conversion Functions (YAML format -> Runtime types)
 // ============================================================================
 
 /**
@@ -76,7 +52,7 @@ const mergeRateLimits = (
 };
 
 /**
- * Convert models config from YAML to runtime format
+ * Convert models config from YAML format to runtime format
  */
 const convertModelsConfig = (yaml: ModelsConfigYaml): ModelsConfig => ({
   definitions: yaml.models.map(
@@ -101,7 +77,7 @@ const convertModelsConfig = (yaml: ModelsConfigYaml): ModelsConfig => ({
 });
 
 /**
- * Convert provider config from YAML to runtime format
+ * Convert provider config from YAML format to runtime format
  */
 const convertProviderConfig = (yaml: ProviderConfigYaml): ProviderConfig => {
   const defaultLimits = convertRateLimits(yaml.defaults.limits);
@@ -179,51 +155,40 @@ const validateTiers = (config: ModelsConfig): void => {
 };
 
 // ============================================================================
-// Loader Functions
+// Loader Functions (from bundled config)
 // ============================================================================
 
 /**
- * Load models configuration from config/models.yml
+ * Load models configuration from bundled config
  */
-export const loadModelsConfig = (configDir?: string): ModelsConfig => {
-  const dir = configDir ?? getConfigDir();
-  const filePath = join(dir, "models.yml");
-  const yaml = parseYamlFile<ModelsConfigYaml>(filePath);
-  const config = convertModelsConfig(yaml);
+export const loadModelsConfig = (): ModelsConfig => {
+  const config = convertModelsConfig(BUNDLED_MODELS);
   validateTiers(config);
   return config;
 };
 
 /**
- * Load a single provider configuration
+ * Load a single provider configuration from bundled config
  */
-export const loadProviderConfig = (
-  providerName: string,
-  configDir?: string
-): ProviderConfig => {
-  const dir = configDir ?? getConfigDir();
-  const filePath = join(dir, "providers", `${providerName}.yml`);
-  const yaml = parseYamlFile<ProviderConfigYaml>(filePath);
+export const loadProviderConfig = (providerName: string): ProviderConfig => {
+  const yaml = BUNDLED_PROVIDERS[providerName];
+  if (!yaml) {
+    throw new ConfigValidationError(
+      `Provider "${providerName}" not found in bundled config.`
+    );
+  }
   return convertProviderConfig(yaml);
 };
 
 /**
- * Load all provider configurations from config/providers/
+ * Load all provider configurations from bundled config
  */
-export const loadAllProviderConfigs = (
-  configDir?: string
-): Map<string, ProviderConfig> => {
-  const dir = configDir ?? getConfigDir();
-  const providersDir = join(dir, "providers");
-  const files = readdirSync(providersDir).filter((f) => f.endsWith(".yml"));
-
+export const loadAllProviderConfigs = (): Map<string, ProviderConfig> => {
   const providers = new Map<string, ProviderConfig>();
 
-  for (const file of files) {
-    const filePath = join(providersDir, file);
-    const yaml = parseYamlFile<ProviderConfigYaml>(filePath);
+  for (const [name, yaml] of Object.entries(BUNDLED_PROVIDERS)) {
     const config = convertProviderConfig(yaml);
-    providers.set(config.name, config);
+    providers.set(name, config);
   }
 
   return providers;
@@ -232,9 +197,9 @@ export const loadAllProviderConfigs = (
 /**
  * Load complete configuration (models + all providers)
  */
-export const loadConfig = (configDir?: string): LoadedConfig => {
-  const models = loadModelsConfig(configDir);
-  const providers = loadAllProviderConfigs(configDir);
+export const loadConfig = (): LoadedConfig => {
+  const models = loadModelsConfig();
+  const providers = loadAllProviderConfigs();
 
   // Validate provider models reference canonical models
   const canonicalIds = new Set(models.definitions.map((m) => m.id));

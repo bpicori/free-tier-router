@@ -44,6 +44,7 @@ import {
   findProvidersForModel,
   findProvidersForGenericAlias,
 } from "./routing/index.js";
+import { debug, setDebugEnabled } from "./utils/debug.js";
 
 /**
  * Result metadata from a completion request
@@ -137,6 +138,9 @@ export interface Router {
  */
 export const createRouter = (config: FreeTierRouterConfig): Router => {
   const resolved = resolveConfig(config);
+
+  // Set debug mode globally
+  setDebugEnabled(resolved.debug);
 
   if (resolved.providers.length === 0) {
     throw new ConfigurationError("At least one provider must be configured");
@@ -444,18 +448,25 @@ const tryCreateProvider = (
   timeoutMs: number
 ): ConfiguredProvider | null => {
   try {
+    debug.log(`Creating provider: ${providerConfig.type}`);
     const definition = getProvider(providerConfig.type);
+    debug.log(`Got definition for ${providerConfig.type}:`, {
+      name: definition.name,
+      models: definition.models.map(m => m.id),
+    });
 
     // Create OpenAI client configured for this provider
     const client = new OpenAI({
       apiKey: providerConfig.apiKey,
       baseURL: providerConfig.baseUrl ?? definition.baseUrl,
       timeout: timeoutMs,
+      dangerouslyAllowBrowser: true,
     });
 
     return { definition, config: providerConfig, client };
-  } catch {
+  } catch (error) {
     // Skip unknown provider types
+    debug.error(`Failed to create provider ${providerConfig.type}:`, error);
     return null;
   }
 };
@@ -463,8 +474,15 @@ const tryCreateProvider = (
 /**
  * Create provider instances from config
  */
-const createProviders = (config: ResolvedConfig): ConfiguredProvider[] =>
-  config.providers
-    .filter((providerConfig) => providerConfig.enabled)
+const createProviders = (config: ResolvedConfig): ConfiguredProvider[] => {
+  debug.log(`createProviders: ${config.providers.length} providers in config`);
+  const enabledProviders = config.providers.filter((p) => p.enabled);
+  debug.log(`Enabled providers: ${enabledProviders.length}`, enabledProviders.map(p => p.type));
+  
+  const created = enabledProviders
     .map((providerConfig) => tryCreateProvider(providerConfig, config.timeoutMs))
     .filter((provider): provider is ConfiguredProvider => provider !== null);
+  
+  debug.log(`Successfully created ${created.length} providers`);
+  return created;
+};

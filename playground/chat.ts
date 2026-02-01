@@ -26,6 +26,7 @@ import * as readline from "readline";
 import { createRouter, type Router } from "../src/router.js";
 import type { ProviderConfig } from "../src/types/config.js";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions.mjs";
+import { setDebugEnabled } from "../src/utils/debug.js";
 
 // ─────────────────────────────────────────────────────────────────
 // Types
@@ -464,6 +465,9 @@ const buildProviders = (): ProviderConfig[] => {
 };
 
 const main = async (): Promise<void> => {
+  // Enable debug logging to see all router internals
+  setDebugEnabled(true);
+
   printHeader();
 
   const providers = buildProviders();

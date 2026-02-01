@@ -64,6 +64,10 @@ export interface FreeTierRouterConfig {
    * If false, returns null instead of throwing
    */
   throwOnExhausted?: boolean;
+  /**
+   * Enable debug logging. Default: false
+   */
+  debug?: boolean;
 }
 
 /**
@@ -84,6 +88,7 @@ export interface ResolvedConfig {
   modelAliases: Record<string, string>;
   timeoutMs: number;
   throwOnExhausted: boolean;
+  debug: boolean;
 }
 
 /**
@@ -111,6 +116,7 @@ export const DEFAULT_CONFIG = {
   },
   timeoutMs: 60000,
   throwOnExhausted: true,
+  debug: false,
 } as const;
 
 /**
@@ -137,5 +143,6 @@ export function resolveConfig(config: FreeTierRouterConfig): ResolvedConfig {
     timeoutMs: config.timeoutMs ?? DEFAULT_CONFIG.timeoutMs,
     throwOnExhausted:
       config.throwOnExhausted ?? DEFAULT_CONFIG.throwOnExhausted,
+    debug: config.debug ?? DEFAULT_CONFIG.debug,
   };
 }

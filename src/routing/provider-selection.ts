@@ -19,6 +19,7 @@ import type {
   SelectionDependencies,
   ProviderMatch,
 } from "./types.js";
+import { debug } from "../utils/debug.js";
 
 /**
  * Resolve a model name through user aliases and normalization
@@ -49,8 +50,16 @@ export const resolveModelName = (
 export const findProvidersForModel = (
   modelId: string,
   providers: ConfiguredProvider[]
-): ProviderMatch[] =>
-  providers
+): ProviderMatch[] => {
+  debug.log(`findProvidersForModel: checking ${providers.length} providers for model "${modelId}"`);
+  providers.forEach(({ definition }) => {
+    debug.log(`  Provider ${definition.name}:`, {
+      models: definition.models.map(m => m.id),
+      modelMapping: Object.keys(definition.modelMapping),
+    });
+  });
+  
+  return providers
     .filter(({ definition }) => providerSupportsModel(definition, modelId))
     .flatMap((configuredProvider) => {
       const { definition } = configuredProvider;
@@ -63,6 +72,7 @@ export const findProvidersForModel = (
         ? [{ provider: configuredProvider, model: modelConfig }]
         : [];
     });
+};
 
 /**
  * Check if a model matches the alias configuration
@@ -118,11 +128,14 @@ const buildCandidate = async (
 
   // Skip excluded providers
   if (excludedProviders.has(definition.name)) {
+    debug.log(`Skipping ${definition.name}/${model.id}: excluded`);
     return null;
   }
 
   // Check if in cooldown
   if (await tracker.isInCooldown(definition.name, model.id)) {
+    const cooldownUntil = await tracker.getCooldownUntil(definition.name, model.id);
+    debug.log(`Skipping ${definition.name}/${model.id}: in cooldown until ${cooldownUntil?.toISOString()}`);
     return null;
   }
 
@@ -211,11 +224,14 @@ export const selectProvider = async (
 
   // Resolve model name
   const resolvedModel = resolveModelName(model, modelAliases);
+  debug.log(`Selecting provider for model: ${model} -> ${resolvedModel}`);
 
   // Find matching providers
   const matches = isGenericAlias(resolvedModel)
     ? findProvidersForGenericAlias(resolvedModel, providers)
     : findProvidersForModel(resolvedModel, providers);
+
+  debug.log(`Found ${matches.length} matching providers:`, matches.map(m => `${m.provider.definition.name}/${m.model.id}`));
 
   if (matches.length === 0) {
     return err({ type: "no_matching_providers", model: resolvedModel });
@@ -227,7 +243,10 @@ export const selectProvider = async (
     stateStore,
   });
 
+  debug.log(`Available candidates: ${candidates.length}/${matches.length}`);
+
   if (candidates.length === 0) {
+    debug.log(`No available candidates - all providers filtered out`);
     return err({ type: "no_available_candidates", model: resolvedModel });
   }
 
